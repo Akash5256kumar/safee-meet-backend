@@ -24,6 +24,7 @@ jobs:
           script: |
             set -e
 
+            git config --global --add safe.directory /var/www/safee-meet-backend
             cd /var/www/safee-meet-backend
 
             echo "→ Pulling latest code..."
@@ -47,6 +48,6 @@ jobs:
             chmod -R 755 /var/www/safee-meet-backend/bootstrap/cache
 
             echo "→ Restarting PHP-FPM..."
-            systemctl restart php8.3-fpm
+            systemctl restart php8.4-fpm
 
             echo "✓ Deployment complete!"
