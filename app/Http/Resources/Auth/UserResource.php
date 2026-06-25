@@ -22,6 +22,8 @@ class UserResource extends JsonResource
             'kycStatus'          => $this->kyc_status,
             'trustScore'         => $this->trust_score,
             'trustTier'          => VerificationLevelResolver::fromUser($this->kyc_status, $this->trust_tier),
+            'email'              => $this->decryptValue($this->email_encrypted),
+            'phone'              => $this->decryptValue($this->phone_encrypted),
             'isChatEnabled'      => $this->is_chat_enabled,
             'isMeetingEnabled'   => $this->is_meeting_enabled,
             'isSosEnabled'       => $this->is_sos_enabled,
@@ -30,5 +32,18 @@ class UserResource extends JsonResource
             'lastLoginAt'        => $this->last_login_at,
             'createdAt'          => $this->created_at,
         ];
+    }
+
+    private function decryptValue(?string $value): ?string
+    {
+        if (!$value) {
+            return null;
+        }
+
+        try {
+            return decrypt($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }
