@@ -1,0 +1,31 @@
+server {
+    listen 80;
+    server_name 168.144.112.102;   # Replace with domain when ready
+
+    root /var/www/safee-meet-backend/public;
+    index index.php;
+
+    client_max_body_size 50M;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    location ~* \.(env|log|git)$ {
+        deny all;
+    }
+
+    error_log  /var/log/nginx/safee-meet-error.log;
+    access_log /var/log/nginx/safee-meet-access.log;
+}
