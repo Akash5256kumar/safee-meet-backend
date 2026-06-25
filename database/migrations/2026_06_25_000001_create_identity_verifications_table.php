@@ -8,12 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('identity_verifications')) {
+            return;
+        }
+
         Schema::create('identity_verifications', function (Blueprint $table) {
             $table->string('id', 26)->primary();
             $table->string('user_id', 26)->index();
             $table->string('provider')->nullable();
             $table->string('provider_reference_id')->nullable()->index();
-            $table->string('verification_level')->default('basic');
+            $table->string('verification_level')->default('standard');
             $table->string('status')->default('draft')->index();
             $table->timestamp('submitted_at')->nullable()->index();
             $table->string('reviewed_by_user_id', 26)->nullable();

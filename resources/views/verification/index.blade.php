@@ -89,13 +89,13 @@
                             </td>
                             <td style="padding:16px 10px; width:250px;">
                                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                                    @if ($document?->front_file_path)
+                                    @if ($document?->front_file_url)
                                         <a href="{{ route('verification.files.show', ['verification' => $verification->id, 'asset' => 'front']) }}" style="background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.45); font-size:11px; padding:5px 10px; border-radius:999px; text-decoration:none;">View ID Front</a>
                                     @endif
-                                    @if ($document?->back_file_path)
+                                    @if ($document?->back_file_url)
                                         <a href="{{ route('verification.files.show', ['verification' => $verification->id, 'asset' => 'back']) }}" style="background:rgba(59,130,246,0.15); color:#93c5fd; border:1px solid rgba(59,130,246,0.45); font-size:11px; padding:5px 10px; border-radius:999px; text-decoration:none;">View ID Back</a>
                                     @endif
-                                    @if ($selfie?->selfie_file_path)
+                                    @if ($selfie?->selfie_file_url)
                                         <a href="{{ route('verification.files.show', ['verification' => $verification->id, 'asset' => 'selfie']) }}" style="background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.45); font-size:11px; padding:5px 10px; border-radius:999px; text-decoration:none;">View Selfie</a>
                                     @endif
                                 </div>

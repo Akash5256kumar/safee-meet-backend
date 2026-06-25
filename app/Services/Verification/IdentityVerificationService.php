@@ -59,12 +59,12 @@ class IdentityVerificationService
             'currentStep' => $this->determineCurrentStep($verification, $document, $selfie),
             'status' => $this->presentStatus($verification),
             'rejectionReason' => $verification?->rejection_reason ?? $document?->rejection_reason ?? $selfie?->failure_reason,
-            'hasIdFront' => !empty($document?->front_file_path),
-            'hasIdBack' => !empty($document?->back_file_path),
-            'hasSelfie' => !empty($selfie?->selfie_file_path),
-            'idFrontUrl' => $document?->front_file_path ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'front']) : null,
-            'idBackUrl' => $document?->back_file_path ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'back']) : null,
-            'selfieUrl' => $selfie?->selfie_file_path ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'selfie']) : null,
+            'hasIdFront' => !empty($document?->front_file_url),
+            'hasIdBack' => !empty($document?->back_file_url),
+            'hasSelfie' => !empty($selfie?->selfie_file_url),
+            'idFrontUrl' => $document?->front_file_url ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'front']) : null,
+            'idBackUrl' => $document?->back_file_url ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'back']) : null,
+            'selfieUrl' => $selfie?->selfie_file_url ? route('verification.files.show', ['verification' => $verification->id, 'asset' => 'selfie']) : null,
             'submittedAt' => $verification?->submitted_at?->toIso8601String(),
             'reviewedAt' => $verification?->reviewed_at?->toIso8601String(),
         ];
@@ -100,8 +100,8 @@ class IdentityVerificationService
             $document->fill([
                 'document_type' => $documentType ?? 'other',
                 'issuing_country_code' => strtoupper($issuingCountryCode ?? 'ZZ'),
-                'front_file_path' => $frontPath,
-                'back_file_path' => $backPath,
+                'front_file_url' => $frontPath,
+                'back_file_url' => $backPath,
                 'status' => 'pending',
                 'rejection_reason' => null,
                 'created_by_user_id' => $document->created_by_user_id ?? $user->id,
@@ -153,7 +153,7 @@ class IdentityVerificationService
             }
 
             $selfieRecord->fill([
-                'selfie_file_path' => $selfiePath,
+                'selfie_file_url' => $selfiePath,
                 'status' => 'pending',
                 'failure_reason' => null,
                 'created_by_user_id' => $selfieRecord->created_by_user_id ?? $user->id,
@@ -290,9 +290,9 @@ class IdentityVerificationService
         $selfie = $verification->selfieVerifications->sortByDesc('created_at')->first();
 
         return match ($asset) {
-            'front' => $document?->front_file_path,
-            'back' => $document?->back_file_path,
-            'selfie' => $selfie?->selfie_file_path,
+            'front' => $document?->front_file_url,
+            'back' => $document?->back_file_url,
+            'selfie' => $selfie?->selfie_file_url,
             default => null,
         };
     }
@@ -352,7 +352,7 @@ class IdentityVerificationService
             'approved' => 'complete',
             'pending', 'manual_review' => 'processing',
             'rejected', 'expired' => 'uploadId',
-            default => $selfie?->selfie_file_path ? 'processing' : ($document?->front_file_path ? 'selfie' : 'uploadId'),
+            default => $selfie?->selfie_file_url ? 'processing' : ($document?->front_file_url ? 'selfie' : 'uploadId'),
         };
     }
 

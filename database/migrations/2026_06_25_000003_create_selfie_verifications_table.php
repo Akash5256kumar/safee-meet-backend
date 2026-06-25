@@ -8,11 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('selfie_verifications')) {
+            return;
+        }
+
         Schema::create('selfie_verifications', function (Blueprint $table) {
             $table->string('id', 26)->primary();
             $table->string('identity_verification_id', 26)->index();
             $table->string('user_id', 26)->index();
-            $table->text('selfie_file_path');
+            $table->text('selfie_file_url');
             $table->decimal('liveness_score', 5, 2)->nullable();
             $table->decimal('face_match_score', 5, 2)->nullable();
             $table->string('status')->default('pending');

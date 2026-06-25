@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('identity_documents')) {
+            return;
+        }
+
         Schema::create('identity_documents', function (Blueprint $table) {
             $table->string('id', 26)->primary();
             $table->string('identity_verification_id', 26)->index();
@@ -15,8 +19,8 @@ return new class extends Migration
             $table->string('document_type')->default('other');
             $table->string('issuing_country_code', 2)->default('ZZ');
             $table->string('document_number_hash', 64)->nullable()->index();
-            $table->text('front_file_path');
-            $table->text('back_file_path')->nullable();
+            $table->text('front_file_url');
+            $table->text('back_file_url')->nullable();
             $table->text('extracted_name_encrypted')->nullable();
             $table->text('extracted_dob_encrypted')->nullable();
             $table->string('status')->default('pending');

@@ -17,7 +17,7 @@ class SelfieVerification extends Model
         'id',
         'identity_verification_id',
         'user_id',
-        'selfie_file_path',
+        'selfie_file_url',
         'liveness_score',
         'face_match_score',
         'status',
