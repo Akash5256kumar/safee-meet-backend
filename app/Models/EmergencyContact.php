@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class EmergencyContact extends Model
 {
@@ -13,6 +15,31 @@ class EmergencyContact extends Model
         'phone_number',
 
     ];
+
+    protected static function booted(): void
+    {
+        // On a fresh install this table's id is a bigint auto-increment,
+        // but on deployments where it already existed under the app's
+        // older schema it's a char(26) ULID with no default — generate
+        // one ourselves only when the column actually needs it.
+        static::creating(function (self $contact) {
+            $key = $contact->getKeyName();
+            if (empty($contact->{$key})
+                && Schema::getColumnType($contact->getTable(), $key) === 'string') {
+                $contact->{$key} = (string) Str::ulid();
+            }
+        });
+    }
+
+    public function getIncrementing()
+    {
+        return Schema::getColumnType($this->getTable(), $this->getKeyName()) !== 'string';
+    }
+
+    public function getKeyType()
+    {
+        return Schema::getColumnType($this->getTable(), $this->getKeyName()) === 'string' ? 'string' : 'int';
+    }
 
     public function user()
     {
