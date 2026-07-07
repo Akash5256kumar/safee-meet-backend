@@ -24,8 +24,7 @@ class EmergencyContact extends Model
         // one ourselves only when the column actually needs it.
         static::creating(function (self $contact) {
             $key = $contact->getKeyName();
-            if (empty($contact->{$key})
-                && Schema::getColumnType($contact->getTable(), $key) === 'string') {
+            if (empty($contact->{$key}) && static::usesUlidKey()) {
                 $contact->{$key} = (string) Str::ulid();
             }
         });
@@ -33,12 +32,17 @@ class EmergencyContact extends Model
 
     public function getIncrementing()
     {
-        return Schema::getColumnType($this->getTable(), $this->getKeyName()) !== 'string';
+        return !static::usesUlidKey();
     }
 
     public function getKeyType()
     {
-        return Schema::getColumnType($this->getTable(), $this->getKeyName()) === 'string' ? 'string' : 'int';
+        return static::usesUlidKey() ? 'string' : 'int';
+    }
+
+    private static function usesUlidKey(): bool
+    {
+        return in_array(Schema::getColumnType('emergency_contacts', 'id'), ['char', 'string'], true);
     }
 
     public function user()
