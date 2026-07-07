@@ -16,13 +16,14 @@ class EmergencyContactController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id',
             'full_name' => 'required|string|max:255',
             'relationship' => 'required|string|max:100',
             'phone_number' => 'required|string|max:20',
         ]);
 
-        $exists = EmergencyContact::where('user_id', $request->user_id)
+        $userId = $request->user()->id;
+
+        $exists = EmergencyContact::where('user_id', $userId)
             ->where('phone_number', $request->phone_number)
             ->exists();
 
@@ -34,7 +35,7 @@ class EmergencyContactController extends Controller
         }
 
         $contact = EmergencyContact::create([
-            'user_id' => $request->user_id,
+            'user_id' => $userId,
             'full_name' => $request->full_name,
             'relationship' => $request->relationship,
             'phone_number' => $request->phone_number,
@@ -45,12 +46,14 @@ class EmergencyContactController extends Controller
             'message' => 'Emergency contact added successfully.',
             'data' => $contact,
         ]);
-    
+
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $contact = EmergencyContact::find($id);
+        $contact = EmergencyContact::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
 
         if (!$contact) {
             return response()->json([
@@ -66,11 +69,11 @@ class EmergencyContactController extends Controller
             'message' => 'Emergency contact deleted successfully.'
         ]);
     }
-   
 
-    public function index($id)
+
+    public function index(Request $request)
     {
-        $contacts = EmergencyContact::where('user_id', $id)->get();
+        $contacts = EmergencyContact::where('user_id', $request->user()->id)->get();
 
         if ($contacts->isEmpty()) {
             return response()->json([

@@ -65,7 +65,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('reviews', [ReviewController::class, 'index']);
         Route::post('reviews/{review}/helpful', [ReviewController::class, 'markHelpful']);
 
-        Route::get('/emergency-contact/{id}', [EmergencyContactController::class, 'index']);
+        Route::get('/emergency-contact', [EmergencyContactController::class, 'index']);
         Route::post('/emergency-contact', [EmergencyContactController::class, 'store']);
         Route::delete('/emergency-contact/{id}', [EmergencyContactController::class, 'destroy']);
 
