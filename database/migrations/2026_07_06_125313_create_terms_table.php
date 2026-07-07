@@ -11,12 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('terms')) {
+            return;
+        }
+
+        // "admins" is created by a later migration (chronologically after
+        // this one), so it may not exist yet — add the FK only if it does,
+        // rather than failing on migration order.
         Schema::create('terms', function (Blueprint $table) {
             $table->id();
             $table->longText('content')->nullable();
-            $table->foreignId('updated_by')->nullable()->constrained('admins')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable();
             $table->timestamps();
         });
+
+        if (Schema::hasTable('admins')) {
+            Schema::table('terms', function (Blueprint $table) {
+                $table->foreign('updated_by')->references('id')->on('admins')->nullOnDelete();
+            });
+        }
     }
 
     /**
