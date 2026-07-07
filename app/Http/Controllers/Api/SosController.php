@@ -64,9 +64,7 @@ class SosController extends Controller
     ]);
 
     $user = User::findOrFail($validated['user_id']);
-
-    $contacts = $user->emergencyContacts()
-        ->get(['full_name', 'phone_number']);
+    $contacts = $user->emergencyContacts()->get(['full_name', 'phone_number']);
 
     $incident = Incident::create([
         'reporter_user_id' => $user->id,

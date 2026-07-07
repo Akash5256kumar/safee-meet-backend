@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\VerificationApiController;
 use App\Http\Controllers\MemberController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\SosController;
+use App\Http\Controllers\Api\SubscriptionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,13 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/sos/{incident}/resolve', [SosController::class, 'resolve']);
         Route::post('/reports', [ReportController::class, 'store']);
         Route::get('/reports', [ReportController::class, 'index']);
+
+        
+        // Subscriptions
+        Route::get('/subscriptions/plans', [SubscriptionController::class, 'plans']);
+        Route::get('/subscriptions/current', [SubscriptionController::class, 'current']);
+        Route::post('/subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
+        Route::post('/subscriptions/cancel', [SubscriptionController::class, 'cancel']);
 
         Route::prefix('members')->group(function (): void {
             Route::get('search', [MemberController::class, 'searchByPin']);
