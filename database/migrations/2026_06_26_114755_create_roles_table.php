@@ -11,7 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        // Named admin_roles (not roles) — the app already has a "roles" table
+        // for its user-facing RBAC (char(26) ids, used by role_permissions /
+        // user_roles). This admin-panel role system is unrelated and needs
+        // its own table to avoid colliding with that existing schema.
+        Schema::create('admin_roles', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
@@ -25,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('admin_roles');
     }
 };

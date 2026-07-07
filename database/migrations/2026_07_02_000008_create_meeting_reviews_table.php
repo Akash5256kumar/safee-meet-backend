@@ -8,11 +8,19 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('meeting_reviews')) {
+            return;
+        }
+
         Schema::create('meeting_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('meeting_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('reviewer_id')->constrained('users')->cascadeOnDelete(); // who wrote it
-            $table->foreignId('reviewee_id')->constrained('users')->cascadeOnDelete(); // who it's about
+            // meetings.id and users.id are char(26) ULIDs on this deployment, not bigint.
+            $table->char('meeting_id', 26);
+            $table->foreign('meeting_id')->references('id')->on('meetings')->cascadeOnDelete();
+            $table->char('reviewer_id', 26); // who wrote it
+            $table->foreign('reviewer_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->char('reviewee_id', 26); // who it's about
+            $table->foreign('reviewee_id')->references('id')->on('users')->cascadeOnDelete();
             $table->unsignedTinyInteger('rating'); // 1-5
             $table->text('comment')->nullable();
 

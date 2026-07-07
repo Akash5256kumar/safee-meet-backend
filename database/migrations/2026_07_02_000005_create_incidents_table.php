@@ -8,10 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('incidents')) {
+            return;
+        }
+
         Schema::create('incidents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('reporter_user_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('meeting_id')->nullable()->constrained('meetings')->nullOnDelete();
+            // users.id and meetings.id are char(26) ULIDs on this deployment, not bigint.
+            $table->char('reporter_user_id', 26);
+            $table->foreign('reporter_user_id')->references('id')->on('users')->cascadeOnDelete();
+
+            $table->char('meeting_id', 26)->nullable();
+            $table->foreign('meeting_id')->references('id')->on('meetings')->nullOnDelete();
 
             $table->enum('type', [
                 'fake_user', 'fraud', 'harassment', 'sos', 'general_incident',
@@ -25,7 +33,8 @@ return new class extends Migration
             $table->json('emergency_contacts_notified')->nullable();
 
             $table->enum('status', ['open', 'investigating', 'resolved'])->default('open');
-            $table->foreignId('resolved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->char('resolved_by', 26)->nullable();
+            $table->foreign('resolved_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamp('resolved_at')->nullable();
             $table->text('resolution_notes')->nullable();
 

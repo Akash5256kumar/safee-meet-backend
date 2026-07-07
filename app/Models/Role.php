@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Role extends Model
 {
+    // Admin-panel roles live in admin_roles, not the app's user-facing
+    // "roles" table (different schema, unrelated feature).
+    protected $table = 'admin_roles';
+
     protected $fillable = [
         'name',
         'slug',

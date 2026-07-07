@@ -11,18 +11,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table): void {
-            $table->string('phone')->nullable()->after('email');
-
-            $table->string('email')->nullable()->change();
+            if (!Schema::hasColumn('users', 'phone')) {
+                $table->string('phone')->nullable();
+            }
         });
+
+        // This deployment has no plain "email" column at all (Firebase auth
+        // + email_encrypted/email_hash instead) — nothing to loosen.
+        if (Schema::hasColumn('users', 'email')) {
+            Schema::table('users', function (Blueprint $table): void {
+                $table->string('email')->nullable()->change();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table): void {
-            $table->dropColumn('phone');
-
-            $table->string('email')->nullable(false)->change();
-        });
+        if (Schema::hasColumn('users', 'email')) {
+            Schema::table('users', function (Blueprint $table): void {
+                $table->string('email')->nullable(false)->change();
+            });
+        }
     }
 };

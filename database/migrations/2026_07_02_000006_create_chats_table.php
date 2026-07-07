@@ -8,10 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('chats') || Schema::hasTable('chat_messages')) {
+            return;
+        }
+
         Schema::create('chats', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('requester_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('recipient_id')->constrained('users')->cascadeOnDelete();
+            // users.id is a char(26) ULID on this deployment, not bigint.
+            $table->char('requester_id', 26);
+            $table->foreign('requester_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->char('recipient_id', 26);
+            $table->foreign('recipient_id')->references('id')->on('users')->cascadeOnDelete();
             $table->enum('status', ['requested', 'accepted', 'declined', 'closed'])->default('requested');
             $table->timestamps();
         });
@@ -19,7 +26,8 @@ return new class extends Migration
         Schema::create('chat_messages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chat_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sender_id')->constrained('users')->cascadeOnDelete();
+            $table->char('sender_id', 26);
+            $table->foreign('sender_id')->references('id')->on('users')->cascadeOnDelete();
             $table->text('body')->nullable();
             $table->string('image_path')->nullable();
             $table->timestamp('read_at')->nullable();

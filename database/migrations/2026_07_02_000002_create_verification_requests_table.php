@@ -8,9 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasTable('verification_requests')) {
+            return;
+        }
+
         Schema::create('verification_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            // users.id is a char(26) ULID on this deployment, not bigint.
+            $table->char('user_id', 26);
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->enum('level', ['level1', 'level2', 'professional']);
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
 
@@ -34,7 +40,8 @@ return new class extends Migration
             $table->string('insurance_document')->nullable();
 
             $table->text('rejection_reason')->nullable();
-            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->char('reviewed_by', 26)->nullable();
+            $table->foreign('reviewed_by')->references('id')->on('users')->nullOnDelete();
             $table->timestamp('reviewed_at')->nullable();
 
             $table->timestamps();

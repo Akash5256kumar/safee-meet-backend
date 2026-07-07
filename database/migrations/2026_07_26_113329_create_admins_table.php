@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('admins', function (Blueprint $table) {
             $table->id();
             $table->foreignId('role_id')
-                ->constrained('roles')
+                ->constrained('admin_roles')
                 ->restrictOnDelete();
             $table->string('name');
             $table->string('email')->unique();
