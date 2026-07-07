@@ -15,9 +15,6 @@ use Illuminate\Support\Facades\Route;
 
 
 
-Route::match(['GET', 'POST'], '/subscription', [SubscriptionsController::class, 'index'])->name('subscription');
-
-
 Route::middleware('guest:admin')->group(function () {
 
     Route::get('/login', [LoginController::class, 'index'])->name('login');
