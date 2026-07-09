@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Meeting;
 use App\Models\User;
+use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,10 @@ use Illuminate\Validation\ValidationException;
 
 class MeetingController extends Controller
 {
+    public function __construct(private readonly PushNotificationService $push)
+    {
+    }
+
     /**
      * GET /api/meetings — Recent Meetings list (Home screen + "See all")
      */
@@ -88,15 +93,39 @@ class MeetingController extends Controller
             'purpose' => $validated['purpose'] ?? null,
             'item_or_service' => $validated['item_or_service'] ?? null,
             'type' => $validated['type'] ?? 'other',
-            'status' => 'scheduled',
+            'status' => 'pending_approval',
             'trust_score_snapshot' => $request->user()->trust_score,
         ]);
+
+        $meeting->load(['host', 'guest']);
+        $when = $this->formatWhen($meeting);
+
+        $this->push->sendToUser(
+            $meeting->guest,
+            'New meeting request',
+            "{$meeting->host->display_name} wants to meet — {$meeting->location}, {$when}",
+            ['type' => 'meeting_request', 'meeting_id' => (string) $meeting->id],
+        );
+        $this->push->sendToUser(
+            $meeting->host,
+            'Request sent',
+            "Waiting for {$meeting->guest->display_name} to respond",
+            ['type' => 'meeting_confirmed', 'meeting_id' => (string) $meeting->id],
+        );
 
         return response()->json([
             'success' => true,
             'message' => 'Meeting created successfully.',
             'data' => ['meeting_id' => $meeting->id],
         ], 201);
+    }
+
+    private function formatWhen(Meeting $meeting): string
+    {
+        $date = $meeting->meeting_date?->format('M j, Y') ?? '';
+        $time = $meeting->meeting_time ?? '';
+
+        return trim("{$date} {$time}");
     }
 
     public function destroy(Request $request, Meeting $meeting): JsonResponse
@@ -119,6 +148,50 @@ class MeetingController extends Controller
     {
         $this->authorizeParticipant($request, $meeting);
         $meeting->update(['status' => 'live']);
+
+        return response()->json($meeting);
+    }
+
+    /**
+     * POST /api/meetings/{meeting}/approve — guest approves a pending
+     * meeting request. Guest-only; distinct from accept() ("live now").
+     */
+    public function approve(Request $request, Meeting $meeting): JsonResponse
+    {
+        $this->authorizeGuest($request, $meeting);
+        abort_unless($meeting->status === 'pending_approval', 422, 'Meeting is not awaiting approval');
+
+        $meeting->update(['status' => 'scheduled']);
+        $meeting->load(['host', 'guest']);
+
+        $this->push->sendToUser(
+            $meeting->host,
+            'Meeting approved',
+            "{$meeting->guest->display_name} confirmed — {$this->formatWhen($meeting)} at {$meeting->location}",
+            ['type' => 'meeting_approved', 'meeting_id' => (string) $meeting->id],
+        );
+
+        return response()->json($meeting);
+    }
+
+    /**
+     * POST /api/meetings/{meeting}/deny — guest declines a pending
+     * meeting request. Guest-only.
+     */
+    public function deny(Request $request, Meeting $meeting): JsonResponse
+    {
+        $this->authorizeGuest($request, $meeting);
+        abort_unless($meeting->status === 'pending_approval', 422, 'Meeting is not awaiting approval');
+
+        $meeting->update(['status' => 'declined']);
+        $meeting->load(['host', 'guest']);
+
+        $this->push->sendToUser(
+            $meeting->host,
+            'Meeting declined',
+            "{$meeting->guest->display_name} declined the meeting request",
+            ['type' => 'meeting_declined', 'meeting_id' => (string) $meeting->id],
+        );
 
         return response()->json($meeting);
     }
@@ -210,6 +283,15 @@ class MeetingController extends Controller
             in_array($request->user()->id, [$meeting->host_user_id, $meeting->guest_user_id]),
             403,
             'Not a participant in this meeting'
+        );
+    }
+
+    private function authorizeGuest(Request $request, Meeting $meeting): void
+    {
+        abort_unless(
+            $request->user()->id === $meeting->guest_user_id,
+            403,
+            'Only the invited guest can respond to this meeting request'
         );
     }
 }

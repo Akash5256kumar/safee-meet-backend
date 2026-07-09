@@ -64,6 +64,8 @@ class User extends Authenticatable
         'last_seen_at',
         'suspended_reason',
         'deleted_reason',
+        'fcm_token',
+        'fcm_token_updated_at',
     ];
 
     protected $hidden = [

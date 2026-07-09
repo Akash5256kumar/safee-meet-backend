@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Api\AuthController as PhoneOtpAuthController;
+use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\EmergencyContactController;
 use App\Http\Controllers\Api\MeetingController;
 use App\Http\Controllers\Api\ReportController;
@@ -55,12 +56,16 @@ Route::prefix('v1')->group(function (): void {
 
         Route::apiResource('meetings', MeetingController::class)->only(['index', 'store', 'show', 'destroy']);
         Route::post('meetings/{meeting}/accept', [MeetingController::class, 'accept']);
+        Route::post('meetings/{meeting}/approve', [MeetingController::class, 'approve']);
+        Route::post('meetings/{meeting}/deny', [MeetingController::class, 'deny']);
         Route::post('meetings/{meeting}/reschedule', [MeetingController::class, 'reschedule']);
         Route::post('meetings/{meeting}/cancel', [MeetingController::class, 'cancel']);
         Route::post('meetings/{meeting}/arrive', [MeetingController::class, 'arrive']);
         Route::post('meetings/{meeting}/location', [MeetingController::class, 'pingLocation']);
         Route::post('meetings/{meeting}/complete', [MeetingController::class, 'complete']);
         Route::post('meetings/{meeting}/review', [ReviewController::class, 'store']);
+
+        Route::post('device/fcm-token', [DeviceController::class, 'syncFcmToken']);
 
         Route::get('reviews', [ReviewController::class, 'index']);
         Route::post('reviews/{review}/helpful', [ReviewController::class, 'markHelpful']);
