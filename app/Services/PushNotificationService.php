@@ -21,6 +21,10 @@ class PushNotificationService
     public function sendToUser(User $user, string $title, string $body, array $data): void
     {
         if (! $user->fcm_token) {
+            Log::info('Push notification skipped — user has no fcm_token on file', [
+                'user_id' => $user->id,
+                'type' => $data['type'] ?? null,
+            ]);
             return;
         }
 
@@ -31,6 +35,10 @@ class PushNotificationService
                 ->withData($data);
 
             Firebase::messaging()->send($message);
+            Log::info('Push notification sent', [
+                'user_id' => $user->id,
+                'type' => $data['type'] ?? null,
+            ]);
         } catch (Throwable $e) {
             Log::warning('Push notification failed to send', [
                 'user_id' => $user->id,
