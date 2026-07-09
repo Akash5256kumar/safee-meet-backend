@@ -30,7 +30,7 @@ class PushNotificationService
 
         try {
             $message = CloudMessage::new()
-                ->withToken($user->fcm_token)
+                ->toToken($user->fcm_token)
                 ->withNotification(Notification::create($title, $body))
                 ->withData($data);
 
