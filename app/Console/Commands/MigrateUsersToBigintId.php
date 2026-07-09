@@ -327,11 +327,27 @@ class MigrateUsersToBigintId extends Command
             }
         }
 
-        // 2. Swap users itself — old id is now unreferenced.
-        DB::statement('ALTER TABLE `users` DROP PRIMARY KEY, DROP COLUMN `id`');
-        DB::statement('ALTER TABLE `users` DROP INDEX `new_id`');
-        DB::statement('ALTER TABLE `users` CHANGE `new_id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY (`id`)');
-        $this->info('users.id swapped to BIGINT AUTO_INCREMENT.');
+        // 2. Swap users itself — old id is now unreferenced. Skipped entirely
+        // if this already completed on a previous run (idempotent) —
+        // detected by users.id already being the final bigint column with no
+        // leftover new_id shadow column.
+        if (!Schema::hasColumn('users', 'new_id')) {
+            $this->line('users.new_id no longer exists — users table already swapped, skipping.');
+        } else {
+            if (Schema::hasColumn('users', 'id')) {
+                // Fresh run: both the old CHAR id and the new_id shadow
+                // column still exist. Drop the old one first — it's safe
+                // now, every dependent FK was dropped in step 1 above.
+                DB::statement('ALTER TABLE `users` DROP PRIMARY KEY, DROP COLUMN `id`');
+            }
+            // Old id is gone (either just now, or from a previous
+            // interrupted run). MySQL requires the index-drop, rename, and
+            // new PRIMARY KEY to happen in one single statement — an
+            // auto_increment column may never be briefly keyless between
+            // separate statements.
+            DB::statement('ALTER TABLE `users` DROP INDEX `new_id`, CHANGE `new_id` `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT, ADD PRIMARY KEY (`id`)');
+            $this->info('users.id swapped to BIGINT AUTO_INCREMENT.');
+        }
 
         // 3. Re-point every FK-constrained table at the now-final users.id.
         foreach (self::FK_COLUMNS as $table => $columns) {
