@@ -24,6 +24,12 @@ class Meeting extends Model
     protected function casts(): array
     {
         return [
+            // Keep these string-shaped in API responses regardless of the
+            // underlying users.id column type (char ULID or bigint) — the
+            // mobile client expects string ids everywhere.
+            'id' => 'string',
+            'host_user_id' => 'string',
+            'guest_user_id' => 'string',
             'meeting_date' => 'date',
             'scheduled_start_at' => 'datetime',
             'arrived_at' => 'datetime',

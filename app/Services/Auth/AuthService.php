@@ -45,10 +45,11 @@ class AuthService
                 'auth_provider'   => $identity->provider,
                 'display_name'    => $payload['name'] ?? $identity->name ?? 'SAFEE User',
                 'avatar_url'      => $identity->avatarUrl,
-                'email_encrypted' => ($payload['email'] ?? $identity->email) ? encrypt($payload['email'] ?? $identity->email) : null,
-                'email_hash'      => ($payload['email'] ?? $identity->email) ? hash_hmac('sha256', strtolower(trim($payload['email'] ?? $identity->email)), config('app.key')) : null,
-                'phone_encrypted' => $identity->phone ? encrypt($identity->phone) : null,
-                'phone_hash'      => $identity->phone ? hash_hmac('sha256', $identity->phone, config('app.key')) : null,
+                // Plain columns going forward — email_encrypted/email_hash/
+                // phone_encrypted/phone_hash are left in place (unused) for
+                // existing rows; no encryption-at-rest at this stage.
+                'email'           => ($payload['email'] ?? $identity->email) ? strtolower(trim($payload['email'] ?? $identity->email)) : null,
+                'phone'           => $identity->phone,
                 'status'          => 'active',
                 'onboarding_status' => 'completed',
                 'kyc_status'      => 'not_started',
@@ -145,14 +146,12 @@ class AuthService
         }
 
         if ($email) {
-            $hash = hash_hmac('sha256', strtolower(trim($email)), config('app.key'));
-            $user = User::where('email_hash', $hash)->first();
+            $user = User::where('email', strtolower(trim($email)))->first();
             if ($user) return $user;
         }
 
         if ($phone) {
-            $hash = hash_hmac('sha256', $phone, config('app.key'));
-            $user = User::where('phone_hash', $hash)->first();
+            $user = User::where('phone', $phone)->first();
             if ($user) return $user;
         }
 

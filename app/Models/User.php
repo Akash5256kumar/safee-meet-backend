@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use App\Models\EmergencyContact;
@@ -15,11 +16,25 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    // users.id is a char(26) ULID (Firebase-based accounts), not an
-    // auto-increment integer — without this, Eloquent overwrites the id
-    // we set on create() with a bogus lastInsertId() after every insert.
-    protected $keyType = 'string';
-    public $incrementing = false;
+    // users.id was historically a char(26) ULID (Firebase-based accounts) on
+    // some deployments, and is being migrated to a bigint auto-increment.
+    // Detect the live column type at runtime — same pattern as
+    // Meeting::usesUlidKey()/EmergencyContact::usesUlidKey() — so this model
+    // works correctly before, during, and after that migration.
+    public function getIncrementing()
+    {
+        return !static::usesUlidKey();
+    }
+
+    public function getKeyType()
+    {
+        return static::usesUlidKey() ? 'string' : 'int';
+    }
+
+    private static function usesUlidKey(): bool
+    {
+        return in_array(Schema::getColumnType('users', 'id'), ['char', 'string'], true);
+    }
 
     protected static function booted(): void
     {
@@ -27,8 +42,10 @@ class User extends Authenticatable
         // User::create(['id' => ...]) silently drops it and MySQL rejects
         // the insert (char(26) PK has no default). Set it directly here,
         // bypassing mass assignment, same pattern as Meeting::booted().
+        // Once the column is bigint auto-increment, usesUlidKey() is false
+        // and this is skipped — MySQL assigns the id instead.
         static::creating(function (User $user): void {
-            if (empty($user->id)) {
+            if (empty($user->id) && static::usesUlidKey()) {
                 $user->id = (string) Str::ulid();
             }
         });
@@ -93,6 +110,10 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            // Always expose id as a string in API responses, regardless of
+            // the underlying column type (char ULID today, bigint after the
+            // migration) — keeps the client contract stable either way.
+            'id' => 'string',
             'is_chat_enabled' => 'boolean',
             'is_meeting_enabled' => 'boolean',
             'is_sos_enabled' => 'boolean',

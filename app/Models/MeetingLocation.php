@@ -17,7 +17,11 @@ class MeetingLocation extends Model
 
     protected function casts(): array
     {
-        return ['recorded_at' => 'datetime'];
+        return [
+            'id' => 'string',
+            'user_id' => 'string',
+            'recorded_at' => 'datetime',
+        ];
     }
 
     protected static function booted(): void
