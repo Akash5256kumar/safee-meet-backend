@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Schema;
  */
 class MigrateUsersToBigintId extends Command
 {
-    protected $signature = 'users:migrate-to-bigint-id {--step=shadow : shadow|backfill|validate|swap}';
+    protected $signature = 'users:migrate-to-bigint-id {--step=shadow : shadow|backfill|validate|swap|repair-fks}';
 
     protected $description = 'Staged conversion of users.id from CHAR(26) ULID to BIGINT AUTO_INCREMENT, remapping all dependent tables';
 
@@ -155,13 +155,59 @@ class MigrateUsersToBigintId extends Command
             'backfill' => $this->runBackfill(),
             'validate' => $this->runValidate(),
             'swap' => $this->runSwap(),
+            'repair-fks' => $this->runRepairFks(),
             default => $this->failUnknownStep(),
         };
     }
 
+    // ── repair-fks: one-off — re-add any FK_COLUMNS constraint that's ────────
+    // missing on an already-bigint column (recovers from the drop-without-
+    // readd bug in an earlier version of this command's swap step).
+
+    private function runRepairFks(): int
+    {
+        foreach (self::FK_COLUMNS as $table => $columns) {
+            if (!Schema::hasTable($table)) {
+                continue;
+            }
+            foreach ($columns as $col) {
+                if (!Schema::hasColumn($table, $col)) {
+                    continue;
+                }
+                $type = Schema::getColumnType($table, $col);
+                if ($type === 'char' || $type === 'string') {
+                    $this->warn("  {$table}.{$col} is still char/string — not swapped yet, skipping repair.");
+                    continue;
+                }
+
+                $existing = DB::selectOne('
+                    SELECT CONSTRAINT_NAME AS name
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = ?
+                      AND COLUMN_NAME = ?
+                      AND REFERENCED_TABLE_NAME = \'users\'
+                    LIMIT 1
+                ', [$table, $col]);
+
+                if ($existing) {
+                    $this->line("  {$table}.{$col}: FK already present (`{$existing->name}`) — skipping.");
+                    continue;
+                }
+
+                $fkName = "fk_{$table}_{$col}_bigint";
+                DB::statement("ALTER TABLE `{$table}` ADD CONSTRAINT `{$fkName}` FOREIGN KEY (`{$col}`) REFERENCES `users`(`id`)");
+                $this->info("  {$table}.{$col}: added missing FK constraint `{$fkName}`.");
+            }
+        }
+
+        $this->info('repair-fks complete.');
+        return self::SUCCESS;
+    }
+
     private function failUnknownStep(): int
     {
-        $this->error('Unknown --step. Use one of: shadow, backfill, validate, swap (in that order).');
+        $this->error('Unknown --step. Use one of: shadow, backfill, validate, swap, repair-fks.');
         return self::FAILURE;
     }
 
@@ -380,6 +426,18 @@ class MigrateUsersToBigintId extends Command
 
     private function dropExistingForeignKey(string $table, string $col): void
     {
+        if (!Schema::hasColumn($table, $col)) {
+            return;
+        }
+
+        // If this column is already bigint, it was already swapped (and any
+        // FK on it already correctly points at the new users.id) — never
+        // touch it again, or a re-run would strip a correct constraint and
+        // never re-add it (exactly the bug this guard fixes).
+        if (Schema::getColumnType($table, $col) !== 'char' && Schema::getColumnType($table, $col) !== 'string') {
+            return;
+        }
+
         $constraint = DB::selectOne('
             SELECT CONSTRAINT_NAME AS name
             FROM information_schema.KEY_COLUMN_USAGE
