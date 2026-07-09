@@ -399,6 +399,19 @@ class MigrateUsersToBigintId extends Command
     private function finishColumnSwap(string $table, string $col, bool $addForeignKey): void
     {
         $newCol = "{$col}_new";
+
+        if (!Schema::hasColumn($table, $col)) {
+            // Original column never existed on this deployment (schema
+            // drift) — an earlier, pre-fix run may still have created an
+            // orphan shadow column for it. Drop that orphan if present and
+            // move on; there's nothing to swap.
+            if (Schema::hasColumn($table, $newCol)) {
+                DB::statement("ALTER TABLE `{$table}` DROP COLUMN `{$newCol}`");
+                $this->warn("  {$table}.{$col} does not exist — dropped orphan shadow column `{$newCol}` and skipped.");
+            }
+            return;
+        }
+
         if (!Schema::hasColumn($table, $newCol)) {
             $this->warn("  {$table}.{$newCol} missing — skipping (was shadow/backfill run for this table?).");
             return;
