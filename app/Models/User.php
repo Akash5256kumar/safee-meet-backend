@@ -189,6 +189,14 @@ class User extends Authenticatable
         return $this->hasMany(Meeting::class, 'host_user_id');
     }
 
+    /** Total meetings this user created (host) or is a participant in (guest). */
+    public function meetingCount(): int
+    {
+        return Meeting::where('host_user_id', $this->id)
+            ->orWhere('guest_user_id', $this->id)
+            ->count();
+    }
+
     /** Deduped rows of unique people who have searched this user's Safee PIN/QR. */
     public function pinSearches()
     {
