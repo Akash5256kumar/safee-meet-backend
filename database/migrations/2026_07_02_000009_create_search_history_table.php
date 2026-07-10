@@ -14,7 +14,13 @@ return new class extends Migration
 
         Schema::create('search_history', function (Blueprint $table) {
             $table->id();
-            // users.id is a char(26) ULID on this deployment, not bigint.
+            // This table already exists on production, so this Schema::create
+            // never actually runs there (guarded above) — kept only for fresh
+            // installs. NOTE: users.id was char(26) ULID when this migration
+            // was written; it was later converted to bigint auto-increment
+            // (see 02455bb.. / MigrateUsersToBigintId), and this table's
+            // searcher_id/found_user_id were migrated along with it. A fresh
+            // install today would need these as bigint unsigned, not char(26).
             $table->char('searcher_id', 26);
             $table->foreign('searcher_id')->references('id')->on('users')->cascadeOnDelete();
             $table->char('found_user_id', 26)->nullable();

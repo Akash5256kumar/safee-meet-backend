@@ -89,6 +89,7 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('members')->group(function (): void {
             Route::get('search', [MemberController::class, 'searchByPin']);
             Route::get('qr', [MemberController::class, 'searchByQR']);
+            Route::get('recent-searches', [MemberController::class, 'recentSearches']);
         });
 
         Route::prefix('verification')->group(function (): void {

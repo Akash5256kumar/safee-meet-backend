@@ -1,0 +1,1490 @@
+{
+  "info": {
+    "_postman_id": "46ac2479-44ec-419f-8dba-3db3cbd6e4a7",
+    "name": "SafeeMeet API",
+    "description": "Full API collection for the SafeeMeet backend (Laravel + Sanctum).\n\nAuth: most endpoints require a Sanctum bearer token. Run one of the Auth requests first, then copy the returned `accessToken` into the `access_token` environment variable (the login/register/verify-otp requests do this automatically via a test script).\n\nBase URL is controlled by the `base_url` environment variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://168.144.112.102:8080/api"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Firebase (primary)",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "provider: google | apple | phone | email. providerToken is the Firebase ID token from the client SDK.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"provider\": \"email\",\n  \"providerToken\": \"firebase-id-token-from-client-sdk\",\n  \"consentAccepted\": true,\n  \"accountType\": \"normal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const data = json.data || json;",
+                  "    if (data.accessToken) pm.environment.set('access_token', data.accessToken);",
+                  "    if (data.refreshToken) pm.environment.set('refresh_token', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"email\",\n  \"providerToken\": \"firebase-id-token-from-client-sdk\",\n  \"loginType\": \"social\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const data = json.data || json;",
+                  "    if (data.accessToken) pm.environment.set('access_token', data.accessToken);",
+                  "    if (data.refreshToken) pm.environment.set('refresh_token', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Check User Exists",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/check-user-exists",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "check-user-exists"
+              ]
+            },
+            "description": "At least one of email, phone, or providerUid is required.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"phone\": null,\n  \"providerUid\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Phone",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/verify-phone",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "verify-phone"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\",\n  \"providerToken\": \"firebase-id-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/verify-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"providerToken\": \"firebase-id-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/email-otp/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "email-otp",
+                "send"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/email-otp/verify",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "email-otp",
+                "verify"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"jane@example.com\",\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Social Token Validate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/social/validate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "social",
+                "validate"
+              ]
+            },
+            "description": "provider: google | apple",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"google\",\n  \"providerToken\": \"google-id-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Used by the shipped app. register/login/etc. are public; me/logout require a bearer token."
+    },
+    {
+      "name": "Auth - Phone OTP (newer flow)",
+      "item": [
+        {
+          "name": "Register (send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\",\n  \"name\": \"Jane Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login (send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login or Register (send OTP)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/login-or-register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "login-or-register"
+              ]
+            },
+            "description": "name is required only if this phone number doesn't have an account yet.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+919999999999\",\n  \"name\": \"Jane Doe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/verify-otp",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "verify-otp"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"otp\": \"{{otp}}\",\n  \"device_name\": \"Postman\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    const data = json.data || json;",
+                  "    if (data.accessToken) pm.environment.set('access_token', data.accessToken);",
+                  "    if (data.refreshToken) pm.environment.set('refresh_token', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/auth/phone/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "auth",
+                "phone",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Not yet wired into the shipped app. register/login/login-or-register/verify-otp are public and rate-limited."
+    },
+    {
+      "name": "Meetings",
+      "item": [
+        {
+          "name": "List Meetings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings"
+              ]
+            },
+            "description": "type: coffee | marketplace | property | business | freelance | social | dating | other. host is always the authenticated user.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"guest_user_id\": \"2\",\n  \"meeting_date\": \"2026-08-01\",\n  \"meeting_time\": \"15:30\",\n  \"location\": \"Cafe Coffee Day, MG Road\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946,\n  \"purpose\": \"Buying a used phone\",\n  \"item_or_service\": \"iPhone 13\",\n  \"type\": \"marketplace\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Meeting",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Meeting",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Meeting (mark live)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Meeting (guest approves request)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Deny Meeting (guest declines request)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/deny",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "deny"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reschedule Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/reschedule",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "reschedule"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meeting_date\": \"2026-08-05\",\n  \"meeting_time\": \"17:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Meeting",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Arrival",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/arrive",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "arrive"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ping Live Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "location"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 12.972,\n  \"longitude\": 77.595\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Meeting",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/complete",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "complete"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Meeting Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/meetings/{{meeting_id}}/review",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "meetings",
+                "{{meeting_id}}",
+                "review"
+              ]
+            },
+            "description": "user_id is the participant being reviewed (must be host or guest of this meeting).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 2,\n  \"rating\": 5,\n  \"comment\": \"Great meeting, very professional and on time.\",\n  \"punctual\": true,\n  \"trustworthy\": true,\n  \"responsive\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Device",
+      "item": [
+        {
+          "name": "Sync FCM Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/device/fcm-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "device",
+                "fcm-token"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fcm_token\": \"sample-fcm-device-token\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "List My Reviews",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/reviews",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews"
+              ]
+            },
+            "description": "Query params: ?stars=5 | ?category=marketplace | ?user_id=123 (defaults to authenticated user)."
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Review Helpful",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/reviews/{{review_id}}/helpful",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "reviews",
+                "{{review_id}}",
+                "helpful"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Emergency Contacts",
+      "item": [
+        {
+          "name": "List Emergency Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/emergency-contact",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "emergency-contact"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Emergency Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/emergency-contact",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "emergency-contact"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe\",\n  \"relationship\": \"Brother\",\n  \"phone_number\": \"+919999988888\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Emergency Contact",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/emergency-contact/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "emergency-contact",
+                "1"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "SOS / Safety",
+      "item": [
+        {
+          "name": "Trigger SOS",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/sos/trigger",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "sos",
+                "trigger"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"meeting_id\": \"{{meeting_id}}\",\n  \"latitude\": 12.9716,\n  \"longitude\": 77.5946\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resolve SOS Incident (mark safe)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/sos/{{incident_id}}/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "sos",
+                "{{incident_id}}",
+                "resolve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Safety Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "reports"
+              ]
+            },
+            "description": "type: fake_user | fraud | harassment | general_incident",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"harassment\",\n  \"meeting_id\": \"{{meeting_id}}\",\n  \"description\": \"Describe what happened in detail.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List My Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "reports"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "List Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/subscriptions/plans",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "subscriptions",
+                "plans"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Current Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/subscriptions/current",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "subscriptions",
+                "current"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/v1/subscriptions/subscribe",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "subscriptions",
+                "subscribe"
+              ]
+            },
+            "description": "plan: free_trial | basic | premium | professional. billing_cycle: trial | monthly. stripe_payment_method_id required unless plan is free_trial.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan\": \"premium\",\n  \"billing_cycle\": \"monthly\",\n  \"stripe_payment_method_id\": \"pm_card_visa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/subscriptions/cancel",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "subscriptions",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Members (PIN / QR search)",
+      "item": [
+        {
+          "name": "Search Member by PIN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/members/search?pin={{member_pin}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "members",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "pin",
+                  "value": "{{member_pin}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Member by QR",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/members/qr?code={{member_pin}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "members",
+                "qr"
+              ],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "{{member_pin}}"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Recently Searched Members",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/members/recent-searches",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "members",
+                "recent-searches"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Verification (KYC)",
+      "item": [
+        {
+          "name": "Verification Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/verification/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "verification",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verification Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/verification/progress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "verification",
+                "progress"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload ID Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/verification/id",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "verification",
+                "id"
+              ]
+            },
+            "description": "documentType: passport | drivers_license | national_id | other",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "front",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "back",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "documentType",
+                  "type": "text",
+                  "value": "passport"
+                },
+                {
+                  "key": "issuingCountryCode",
+                  "type": "text",
+                  "value": "IN"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Selfie",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/verification/selfie",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "v1",
+                "verification",
+                "selfie"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "selfie",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MemberSearchCount;
+use App\Models\SearchHistory;
 use App\Models\User;
 use App\Support\Verification\VerificationLevelResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class MemberController extends Controller
 {
@@ -43,6 +46,8 @@ class MemberController extends Controller
             ], 422);
         }
 
+        $this->logSearch($request, $user, $pin, 'pin');
+
         return response()->json([
             'success' => true,
             'data'    => $this->formatMember($user),
@@ -75,10 +80,74 @@ class MemberController extends Controller
             ], 422);
         }
 
+        $this->logSearch($request, $user, $code, 'qr');
+
         return response()->json([
             'success' => true,
             'data'    => $this->formatMember($user),
         ]);
+    }
+
+    /**
+     * Members the current user has previously searched for (PIN or QR),
+     * most recent first — lets the app show a "recently searched" list
+     * that survives reinstalls, since it lives server-side. Backed by
+     * `member_search_counts`, which holds exactly one (deduped) row per
+     * searcher-member pair, so this is a plain indexed lookup rather than
+     * a GROUP BY over the full search log.
+     * GET /members/recent-searches
+     */
+    public function recentSearches(Request $request): JsonResponse
+    {
+        $rows = MemberSearchCount::where('searcher_id', $request->user()->id)
+            ->orderByDesc('last_searched_at')
+            ->take(20)
+            ->get();
+
+        $usersById = User::whereIn('id', $rows->pluck('member_id'))
+            ->where('status', 'active')
+            ->get()
+            ->keyBy(fn (User $u) => (string) $u->id);
+
+        $members = $rows
+            ->map(fn (MemberSearchCount $row) => $usersById->get((string) $row->member_id))
+            ->filter()
+            ->map(fn (User $u) => $this->formatMember($u))
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data'    => $members,
+        ]);
+    }
+
+    /**
+     * Logs every search attempt (for full audit/analytics in `search_history`)
+     * and atomically upserts the deduped `member_search_counts` row for this
+     * searcher-member pair — a repeat search of the same member updates the
+     * existing row's count/timestamp instead of counting again.
+     */
+    private function logSearch(Request $request, User $found, string $query, string $method): void
+    {
+        $searcherId = $request->user()->id;
+        $now = now();
+
+        SearchHistory::create([
+            'searcher_id'   => $searcherId,
+            'found_user_id' => $found->id,
+            'query'         => $query,
+            'method'        => $method,
+        ]);
+
+        DB::statement(
+            'INSERT INTO member_search_counts (searcher_id, member_id, search_count, last_searched_at, created_at, updated_at)
+             VALUES (?, ?, 1, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                 search_count = search_count + 1,
+                 last_searched_at = VALUES(last_searched_at),
+                 updated_at = VALUES(updated_at)',
+            [$searcherId, $found->id, $now, $now, $now],
+        );
     }
 
     private function formatMember(User $user): array
