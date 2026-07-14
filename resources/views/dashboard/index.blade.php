@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', trim($__env->yieldContent('dashboard-role', 'Admin')).' Dashboard')
+@section('title', 'Dashboard')
 
 @section('styles')
 <style>
@@ -15,6 +15,7 @@
     --warning: #f7b84b;
     --info: #299cdb;
   }
+ 
 
   .dashboard-card {
     background: var(--panel);
@@ -107,14 +108,21 @@
     ['name' => 'Karan Patel', 'role' => 'Corporate Host', 'meetings' => '418', 'rating' => '94%', 'color' => '#0ab39c'],
     ['name' => 'Isha Rao', 'role' => 'Campus Host', 'meetings' => '304', 'rating' => '91%', 'color' => '#f7b84b'],
   ];
+
+  $meetings = [
+    ['id' => '#SM-7821', 'host' => 'Alex Johnson', 'guest' => 'Sarah Mitchell', 'place' => 'Downtown Coffee', 'date' => '10 Jul 2026', 'time' => '10:30 AM', 'type' => 'Coffee', 'status' => 'Upcoming', 'tone' => 'warning', 'trust' => '94%'],
+    ['id' => '#SM-7818', 'host' => 'James Carter', 'guest' => 'Mira Kapoor', 'place' => 'City Park', 'date' => '09 Jul 2026', 'time' => '04:00 PM', 'type' => 'Outdoor', 'status' => 'Live', 'tone' => 'success', 'trust' => '97%'],
+    ['id' => '#SM-7812', 'host' => 'Priya Singh', 'guest' => 'Karan Patel', 'place' => 'Orion Mall', 'date' => '08 Jul 2026', 'time' => '02:15 PM', 'type' => 'Marketplace', 'status' => 'Completed', 'tone' => 'info', 'trust' => '91%'],
+    ['id' => '#SM-7809', 'host' => 'Rahul Mehta', 'guest' => 'Neha Iyer', 'place' => 'Metro Station Gate 2', 'date' => '07 Jul 2026', 'time' => '06:45 PM', 'type' => 'Pickup', 'status' => 'Completed', 'tone' => 'info', 'trust' => '89%'],
+    ['id' => '#SM-7804', 'host' => 'Anaya Sharma', 'guest' => 'Arjun Nair', 'place' => 'Tech Hub Lobby', 'date' => '06 Jul 2026', 'time' => '11:00 AM', 'type' => 'Business', 'status' => 'Cancelled', 'tone' => 'danger', 'trust' => '72%'],
+    ['id' => '#SM-7798', 'host' => 'Isha Rao', 'guest' => 'Grace Gibbons', 'place' => 'Campus Cafe', 'date' => '05 Jul 2026', 'time' => '01:20 PM', 'type' => 'Campus', 'status' => 'Completed', 'tone' => 'info', 'trust' => '96%'],
+  ];
 @endphp
 
 <div class="dashboard-shell space-y-6">
   <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
     <div>
-      <h1 class="dashboard-title text-[22px] font-semibold tracking-normal">
-        Good Morning, @yield('dashboard-role', 'Admin')!
-      </h1>
+      <h1 class="dashboard-title text-[22px] font-semibold tracking-normal">Good Morning, Admin!</h1>
       <p class="dashboard-muted mt-1 text-sm">Here is what is happening with SafeeMeet today.</p>
     </div>
 
@@ -236,11 +244,93 @@
     </section>
   </div>
 
+  <section class="dashboard-card overflow-hidden">
+    <div class="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+      <div>
+        <h3 class="dashboard-title text-base font-semibold">All Meeting List</h3>
+        <p class="dashboard-muted mt-1 text-sm">Complete meeting schedule with safety status and trust score.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <select class="w-fit rounded-md border border-[#1a1a1a] bg-[#1a1a1a] px-3 py-2 text-sm text-[#cbd2e1] outline-none">
+          <option>All Status</option>
+          <option>Upcoming</option>
+          <option>Live</option>
+          <option>Completed</option>
+          <option>Cancelled</option>
+        </select>
+        <button class="inline-flex items-center gap-2 rounded-md bg-[#DC131C] px-3 py-2 text-sm font-semibold text-white transition hover:bg-[#d9573e]">
+          <i class="fa-solid fa-download"></i>
+          Export
+        </button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full min-w-[980px] text-left">
+        <thead class="bg-[#1a1a1a] text-xs uppercase text-[#8f98ad]">
+          <tr>
+            <th class="px-5 py-3 font-semibold">Meeting ID</th>
+            <th class="px-5 py-3 font-semibold">Host</th>
+            <th class="px-5 py-3 font-semibold">Guest</th>
+            <th class="px-5 py-3 font-semibold">Location</th>
+            <th class="px-5 py-3 font-semibold">Date & Time</th>
+            <th class="px-5 py-3 font-semibold">Type</th>
+            <th class="px-5 py-3 font-semibold">Trust</th>
+            <th class="px-5 py-3 font-semibold">Status</th>
+            <th class="px-5 py-3 text-right font-semibold">Action</th>
+          </tr>
+        </thead>
+        <tbody class="text-sm">
+          @foreach ($meetings as $meeting)
+            @php
+              $meetingBadgeClass = [
+                'success' => 'bg-[#0ab39c]/10 text-[#0ab39c]',
+                'warning' => 'bg-[#f7b84b]/10 text-[#f7b84b]',
+                'danger' => 'bg-[#f06548]/10 text-[#f06548]',
+                'info' => 'bg-[#299cdb]/10 text-[#299cdb]',
+              ][$meeting['tone']];
+            @endphp
+            <tr class="table-row">
+              <td class="px-5 py-4 font-semibold text-[#DC131C]">{{ $meeting['id'] }}</td>
+              <td class="px-5 py-4">
+                <div class="flex items-center gap-3">
+                  <div class="avatar-mark bg-[#1a1a1a] text-[#cbd2e1]">
+                    {{ collect(explode(' ', $meeting['host']))->map(fn ($part) => substr($part, 0, 1))->take(2)->implode('') }}
+                  </div>
+                  <span class="dashboard-title font-medium">{{ $meeting['host'] }}</span>
+                </div>
+              </td>
+              <td class="px-5 py-4 text-[#cbd2e1]">{{ $meeting['guest'] }}</td>
+              <td class="dashboard-muted px-5 py-4">{{ $meeting['place'] }}</td>
+              <td class="px-5 py-4">
+                <p class="text-[#cbd2e1]">{{ $meeting['date'] }}</p>
+                <p class="dashboard-muted mt-1 text-xs">{{ $meeting['time'] }}</p>
+              </td>
+              <td class="px-5 py-4 text-[#cbd2e1]">{{ $meeting['type'] }}</td>
+              <td class="px-5 py-4">
+                <span class="inline-flex items-center gap-1 text-[#0ab39c]">
+                  <i class="fa-solid fa-shield-halved text-xs"></i>
+                  {{ $meeting['trust'] }}
+                </span>
+              </td>
+              <td class="px-5 py-4">
+                <span class="rounded px-2 py-1 text-xs font-semibold {{ $meetingBadgeClass }}">{{ $meeting['status'] }}</span>
+              </td>
+              <td class="px-5 py-4 text-right">
+                <button class="rounded-md border border-[#252b3b] px-3 py-1.5 text-xs font-semibold text-[#cbd2e1] hover:text-white">View</button>
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <div class="grid grid-cols-1 gap-5 xl:grid-cols-12">
     <section class="dashboard-card overflow-hidden xl:col-span-8">
       <div class="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <h3 class="dashboard-title text-base font-semibold">Recent Verifications</h3>
+          <h3 class="dashboard-title text-base font-semibold">Recent User List</h3>
           <p class="dashboard-muted mt-1 text-sm">Latest identity checks moving through the system.</p>
         </div>
         <select class="w-fit rounded-md border border-[#1a1a1a] bg-[#1a1a1a] px-3 py-2 text-sm text-[#cbd2e1] outline-none">

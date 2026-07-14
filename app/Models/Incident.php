@@ -48,4 +48,36 @@ class Incident extends Model
     {
         return $query->where('type', 'sos');
     }
+
+    public function getTypeLabelAttribute(): string
+    {
+        return match ($this->type) {
+            'sos' => 'SOS Emergency',
+            'fake_user' => 'Fake User Report',
+            'fraud' => 'Fraud Report',
+            'harassment' => 'Harassment Report',
+            'general_incident' => 'General Incident',
+            default => ucfirst(str_replace('_', ' ', (string) $this->type)),
+        };
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'open' => 'Active',
+            'investigating' => 'Review',
+            'resolved' => 'Resolved',
+            default => ucfirst((string) $this->status),
+        };
+    }
+
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            'open' => '#ef4444',
+            'investigating' => '#f59e0b',
+            'resolved' => '#22c55e',
+            default => '#6b7280',
+        };
+    }
 }

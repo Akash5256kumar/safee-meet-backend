@@ -45,4 +45,36 @@ class Subscription extends Model
     {
         return $query->where('status', 'trial');
     }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'trial' => 'Trial',
+            'active' => 'Active',
+            'expired' => 'Expired',
+            'cancelled' => 'Cancelled',
+            default => ucfirst((string) $this->status),
+        };
+    }
+
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            'active' => '#4ade80',
+            'trial' => '#facc15',
+            'expired', 'cancelled' => '#f87171',
+            default => '#9ca3af',
+        };
+    }
+
+    public function getPlanLabelAttribute(): string
+    {
+        return match ($this->plan) {
+            'free_trial' => 'Free Trial',
+            'basic' => 'Basic',
+            'premium' => 'Premium',
+            'professional' => 'Professional',
+            default => ucfirst(str_replace('_', ' ', (string) $this->plan)),
+        };
+    }
 }
