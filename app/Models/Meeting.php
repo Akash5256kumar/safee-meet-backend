@@ -95,4 +95,29 @@ class Meeting extends Model
     {
         return $this->hasMany(MeetingReview::class);
     }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'completed' => 'Completed',
+            'scheduled' => 'Upcoming',
+            'active', 'live' => 'In Progress',
+            'cancelled' => 'Cancelled',
+            'expired' => 'Expired',
+            'emergency', 'incident_reported' => 'Incident',
+            'draft' => 'Draft',
+            default => ucfirst((string) $this->status),
+        };
+    }
+
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            'completed' => '#22c55e',
+            'scheduled' => '#f59e0b',
+            'active', 'live' => '#3b82f6',
+            'cancelled', 'emergency', 'incident_reported' => '#ef4444',
+            default => '#6b7280',
+        };
+    }
 }

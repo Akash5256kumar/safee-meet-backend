@@ -37,10 +37,11 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/verification/{verification}/reject', [VerificationController::class, 'reject'])
         ->name('verification.reject');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
-    Route::get('/subscription', [SubscriptionsController::class, 'index'])->name('subscription');
+    Route::match(['get', 'post'], '/subscription', [SubscriptionsController::class, 'index'])->name('subscription');
     Route::get('/incidents', [IncidentsController::class, 'index'])->name('incidents');
     Route::get('/revenue', [RevenueController::class, 'index'])->name('revenue');
     Route::get('/terms', [TermsController::class, 'index'])->name('terms.index');
+    Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
     Route::post('/terms', [TermsController::class, 'update'])->name('terms.update');
 
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])

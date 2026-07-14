@@ -266,4 +266,112 @@ class User extends Authenticatable
 
         return $pin;
     }
+
+    // ── Display accessors (admin listing UI) ───────────────
+
+    public function getInitialsAttribute(): string
+    {
+        $name = trim((string) ($this->name ?: $this->display_name ?: ''));
+
+        if ($name === '') {
+            return '?';
+        }
+
+        $parts = preg_split('/\s+/', $name);
+        $first = mb_substr($parts[0], 0, 1);
+        $second = isset($parts[1]) ? mb_substr($parts[1], 0, 1) : mb_substr($parts[0], 1, 1);
+
+        return mb_strtoupper($first.$second);
+    }
+
+    public function getAvatarColorAttribute(): string
+    {
+        $palette = ['#3b82f6', '#f97316', '#22c55e', '#a855f7', '#ec4899', '#14b8a6', '#eab308'];
+
+        return $palette[crc32((string) $this->id) % count($palette)];
+    }
+
+    public function getVerificationLabelAttribute(): string
+    {
+        return match ($this->verification_level) {
+            'level1' => 'L1',
+            'level2' => 'L2',
+            'professional' => 'Pro',
+            default => 'None',
+        };
+    }
+
+    public function getVerificationColorAttribute(): string
+    {
+        return match ($this->verification_level) {
+            'level1' => '#60a5fa',
+            'level2' => '#4ade80',
+            'professional' => '#facc15',
+            default => '#9ca3af',
+        };
+    }
+
+    public function getPlanLabelAttribute(): string
+    {
+        return match ($this->subscription_plan) {
+            'free_trial' => 'Free Trial',
+            'basic' => 'Basic',
+            'premium' => 'Premium',
+            'professional' => 'Professional',
+            default => 'Free',
+        };
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'active' => 'Active',
+            'inactive' => 'Inactive',
+            'suspended' => 'Suspended',
+            'deleted' => 'Deleted',
+            default => ucfirst((string) $this->status),
+        };
+    }
+
+    public function getStatusColorAttribute(): string
+    {
+        return match ($this->status) {
+            'active' => '#4ade80',
+            'suspended' => '#facc15',
+            'inactive', 'deleted' => '#f87171',
+            default => '#9ca3af',
+        };
+    }
+
+    public function getBadgeLabelAttribute(): string
+    {
+        return match ($this->badge) {
+            'level1_verified' => 'Level 1 Verified',
+            'level2_verified_background_checked' => 'Level 2 Verified · Background Checked',
+            'verified_professional' => 'Verified Professional',
+            default => 'Unverified',
+        };
+    }
+
+    public function getVerificationLevelLabelAttribute(): string
+    {
+        return match ($this->verification_level) {
+            'level1' => 'Level 1',
+            'level2' => 'Level 2',
+            'professional' => 'Professional',
+            default => 'Unverified',
+        };
+    }
+
+    public function getAccountTypeLabelAttribute(): string
+    {
+        if ($this->job_title) {
+            return $this->job_title;
+        }
+
+        return match ($this->account_type) {
+            'employer' => 'Employer',
+            default => 'Individual',
+        };
+    }
 }
