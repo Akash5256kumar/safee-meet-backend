@@ -36,7 +36,7 @@
                 @forelse($users as $user)
                     <tr style="border-bottom:1px solid #2a2d3e;">
                         <td class="px-5 py-4 text-[#fff] font-medium">
-                            <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">  
                                 <div style="width:32px; height:32px; border-radius:50%; background:{{ $user->avatar_color }}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{{ $user->initials }}</div>
                                 <div>
                                     <div style="color:#fff; font-weight:600;">{{ $user->name ?: $user->display_name ?: 'Unnamed User' }}</div>
