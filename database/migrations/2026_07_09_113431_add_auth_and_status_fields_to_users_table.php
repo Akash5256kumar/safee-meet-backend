@@ -18,7 +18,11 @@ return new class extends Migration
             | Authentication
             |--------------------------------------------------------------------------
             */
-            $table->string('firebase_uid')->nullable()->unique()->after('phone');
+            if (Schema::hasColumn('users', 'firebase_uid')) {
+                Schema::table('users', function (Blueprint $table) {
+                    $table->index('firebase_uid');
+                });
+            }
             $table->enum('auth_provider', [
                 'phone',
                 'google',
