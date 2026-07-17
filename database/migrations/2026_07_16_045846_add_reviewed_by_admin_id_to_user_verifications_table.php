@@ -55,6 +55,7 @@ return new class extends Migration
 
     private function hasForeignKey(string $table, string $column, string $referencedTable): bool
     {
+        
         return DB::selectOne('
             SELECT CONSTRAINT_NAME AS name
             FROM information_schema.KEY_COLUMN_USAGE
