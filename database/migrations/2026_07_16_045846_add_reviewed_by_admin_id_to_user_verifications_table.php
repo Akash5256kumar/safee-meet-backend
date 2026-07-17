@@ -15,10 +15,13 @@ return new class extends Migration
             // Tracks which admin (admins table/guard) reviewed this
             // verification. Distinct from `reviewed_by`, which FKs to
             // `users` and is reserved for a future user-side reviewer.
-            $table->foreignId('reviewed_by_admin_id')
-                ->nullable()
-                ->after('reviewed_by')
-                ->constrained('admins')
+            $table->unsignedInteger('reviewed_by_admin_id')
+            ->nullable()
+            ->after('reviewed_by');
+
+            $table->foreign('reviewed_by_admin_id')
+                ->references('id')
+                ->on('admins')
                 ->nullOnDelete();
         });
     }
