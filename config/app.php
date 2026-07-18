@@ -123,4 +123,19 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Expose Dev OTP
+    |--------------------------------------------------------------------------
+    |
+    | While no real SMS provider is wired up, phone-OTP endpoints can echo
+    | the generated OTP back in the JSON response so it can be tested
+    | without receiving an SMS. Independent of APP_ENV so it can be turned
+    | on in production temporarily and off again with a single .env flip
+    | once a real SMS provider is integrated.
+    |
+    */
+
+    'expose_dev_otp' => (bool) env('EXPOSE_DEV_OTP', false),
+
 ];
