@@ -46,7 +46,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // ── Everything below requires a valid Sanctum token ─────────────────────
-   // Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware('auth:sanctum')->group(function (): void {
 
         Route::prefix('auth')->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
@@ -104,6 +104,6 @@ Route::prefix('v1')->group(function (): void {
             Route::post('id', [VerificationApiController::class, 'uploadId']);
             Route::post('selfie', [VerificationApiController::class, 'uploadSelfie']);
         });
-   // });
+    });
 });
 
