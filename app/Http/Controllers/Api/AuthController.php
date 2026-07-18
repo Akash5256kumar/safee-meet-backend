@@ -190,14 +190,16 @@ class AuthController extends Controller
             'attempts' => 0,
         ], now()->addMinutes(self::OTP_TTL_MINUTES));
 
-        // Integrate the SMS provider here. Never return the OTP in production.
+        // Integrate the SMS provider here. Until then, EXPOSE_DEV_OTP=true
+        // (see config('app.expose_dev_otp')) echoes the OTP back for
+        // testing — flip that .env value off once a real provider is wired.
         $data = [
             'phone' => $phone,
             'flow' => $intent,
             'expires_in' => self::OTP_TTL_MINUTES * 60,
         ];
 
-        if (app()->environment(['local', 'testing'])) {
+        if (config('app.expose_dev_otp')) {
             $data['dev_otp'] = $otp;
         }
 
