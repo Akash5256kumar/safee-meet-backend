@@ -14,7 +14,6 @@ use App\Http\Controllers\MemberController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\SosController;
 use App\Http\Controllers\Api\SubscriptionController;
-use App\Http\Controllers\Api\SubscriptionPlanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,7 +45,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // ── Everything below requires a valid Sanctum token ─────────────────────
-   // Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware('auth:sanctum')->group(function (): void {
 
         Route::prefix('auth')->group(function (): void {
             Route::get('me', [AuthController::class, 'me']);
@@ -104,6 +103,5 @@ Route::prefix('v1')->group(function (): void {
             Route::post('id', [VerificationApiController::class, 'uploadId']);
             Route::post('selfie', [VerificationApiController::class, 'uploadSelfie']);
         });
-   // });
+    });
 });
-
