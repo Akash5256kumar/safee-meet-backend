@@ -9,7 +9,7 @@
     <div class="flex items-center justify-between mb-6">
         <div>
             <h1 class="text-2xl font-bold text-white">User Management</h1>
-            <p class="text-sm text-gray-400 mt-1">{{ number_format($totalUsers) }} total users</p>
+            <p id="user-total" class="text-sm text-gray-400 mt-1">Loading users...</p>
         </div>
         <button class="bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition">
             Export CSV
@@ -22,57 +22,138 @@
             <thead>
                 <tr class="border-b border-[#2a2d3e] text-left text-xs uppercase tracking-wide text-red-500 ">
                     <th class="px-5 py-4 font-semibold">User</th>
-                     <th class="px-5 py-4 font-semibold">Safee Pin</th>
-                     <th class="px-5 py-4 font-semibold">Verification</th>
-                     <th class="px-5 py-4 font-semibold">Plan</th>
-                     <th class="px-5 py-4 font-semibold">Trust Score</th>
-                     <th class="px-5 py-4 font-semibold">Joined</th>
-                     <th class="px-5 py-4 font-semibold">Status</th>
-                     <th class="px-5 py-4 font-semibold">More Details</th>
+                    <th class="px-5 py-4 font-semibold">Safee Pin</th>
+                    <th class="px-5 py-4 font-semibold">Verification</th>
+                    <th class="px-5 py-4 font-semibold">Plan</th>
+                    <th class="px-5 py-4 font-semibold">Trust Score</th>
+                    <th class="px-5 py-4 font-semibold">Joined</th>
+                    <th class="px-5 py-4 font-semibold">Status</th>
+                    <th class="px-5 py-4 font-semibold">More Details</th>
                 </tr>
             </thead>
-            <tbody>
-
-                @forelse($users as $user)
-                    <tr style="border-bottom:1px solid #2a2d3e;">
-                        <td class="px-5 py-4 text-[#fff] font-medium">
-                            <div style="display:flex; align-items:center; gap:10px;">  
-                                <div style="width:32px; height:32px; border-radius:50%; background:{{ $user->avatar_color }}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">{{ $user->initials }}</div>
-                                <div>
-                                    <div style="color:#fff; font-weight:600;">{{ $user->name ?: $user->display_name ?: 'Unnamed User' }}</div>
-                                    <div style="color:#6b7280; font-size:11px;">{{ $user->email ?: $user->phone ?: '—' }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">{{ $user->safee_pin ? '#'.$user->safee_pin : '—' }}</td>
-                        <td style="padding:14px 20px;">
-                            <span style="background:{{ $user->verification_color }}26; color:{{ $user->verification_color }}; font-size:11px; padding:3px 10px; border-radius:999px;">● {{ $user->verification_label }}</span>
-                        </td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">{{ $user->plan_label }}</td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">{{ $user->trust_score !== null ? round($user->trust_score) : '—' }}</td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">{{ $user->created_at?->format('M Y') ?? '—' }}</td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">
-                            <span style="background:{{ $user->status_color }}26; color:{{ $user->status_color }}; font-size:11px; padding:3px 12px; border-radius:999px;">{{ $user->status_label }}</span>
-                        </td>
-                        <td class="px-5 py-4 text-[#fff] font-medium">
-                            <a href="{{ route('users.show', $user->id) }}" class="see-more-btn">See More</a>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="8" class="px-5 py-4 text-center" style="color:#6b7280;">No users found.</td>
-                    </tr>
-                @endforelse
-
+            <tbody id="user-table-body">
+                <tr>
+                    <td colspan="8" class="px-5 py-8 text-center text-gray-500">Loading...</td>
+                </tr>
             </tbody>
         </table>
     </div>
 
-    @if($users->hasPages())
-        <div class="mt-4">
-            {{ $users->links() }}
+    <div class="mt-4 flex flex-col gap-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <p id="pagination-summary" class="text-gray-400"></p>
+        <div class="flex items-center gap-2">
+            <button id="previous-page" type="button"
+                class="rounded-md border border-[#343746] px-4 py-2 text-gray-300 transition hover:border-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                Previous
+            </button>
+            <span id="page-number" class="min-w-20 text-center text-gray-300"></span>
+            <button id="next-page" type="button"
+                class="rounded-md border border-[#343746] px-4 py-2 text-gray-300 transition hover:border-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
+                Next
+            </button>
         </div>
-    @endif
-
+    </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dataUrl = @json(route('users.data'));
+    const body = document.getElementById('user-table-body');
+    const total = document.getElementById('user-total');
+    const summary = document.getElementById('pagination-summary');
+    const pageNumber = document.getElementById('page-number');
+    const previous = document.getElementById('previous-page');
+    const next = document.getElementById('next-page');
+    let currentPage = 1;
+    let lastPage = 1;
+
+    const escapeHtml = (value) => {
+        const element = document.createElement('div');
+        element.textContent = value ?? '';
+        return element.innerHTML;
+    };
+
+    const joinedLabel = (value) => {
+        if (!value) return '—';
+        return new Intl.DateTimeFormat('en', { month: 'short', year: 'numeric' }).format(new Date(value));
+    };
+
+    const renderRows = (users) => {
+        if (!users.length) {
+            body.innerHTML = '<tr><td colspan="8" class="px-5 py-4 text-center" style="color:#6b7280;">No users found.</td></tr>';
+            return;
+        }
+
+        body.innerHTML = users.map(user => `
+            <tr style="border-bottom:1px solid #2a2d3e;">
+                <td class="px-5 py-4 text-[#fff] font-medium">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:32px; height:32px; border-radius:50%; background:${escapeHtml(user.avatar_color)}; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">${escapeHtml(user.initials)}</div>
+                        <div>
+                            <div style="color:#fff; font-weight:600;">${escapeHtml(user.name)}</div>
+                            <div style="color:#6b7280; font-size:11px;">${escapeHtml(user.contact)}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-5 py-4 text-[#fff] font-medium">${(user.safee_pin ?? user.safee_id)
+ ? '#' + escapeHtml(user.safee_pin ?? user.safee_id)   : '—'}</td>
+                <td style="padding:14px 20px;">
+                    <span style="background:${escapeHtml(user.verification_color)}26; color:${escapeHtml(user.verification_color)}; font-size:11px; padding:3px 10px; border-radius:999px;">● ${escapeHtml(user.verification_label)}</span>
+                </td>
+                <td class="px-5 py-4 text-[#fff] font-medium">${escapeHtml(user.plan_label)}</td>
+                <td class="px-5 py-4 text-[#fff] font-medium">${user.trust_score !== null ? escapeHtml(user.trust_score) : '—'}</td>
+                <td class="px-5 py-4 text-[#fff] font-medium">${escapeHtml(joinedLabel(user.created_at))}</td>
+                <td class="px-5 py-4 text-[#fff] font-medium">
+                    <span style="background:${escapeHtml(user.status_color)}26; color:${escapeHtml(user.status_color)}; font-size:11px; padding:3px 12px; border-radius:999px;">${escapeHtml(user.status_label)}</span>
+                </td>
+                <td class="px-5 py-4 text-[#fff] font-medium">
+                    <a href="${user.show_url}" class="see-more-btn">See More</a>
+                </td>
+            </tr>
+        `).join('');
+    };
+
+    const loadPage = async (page) => {
+        body.innerHTML = '<tr><td colspan="8" class="px-5 py-8 text-center text-gray-500">Loading...</td></tr>';
+        previous.disabled = true;
+        next.disabled = true;
+
+        try {
+            const response = await fetch(`${dataUrl}?page=${page}&per_page=10`, {
+                headers: {
+                    Accept: 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Unable to load users.');
+            }
+
+            const result = await response.json();
+            currentPage = result.current_page;
+            lastPage = result.last_page;
+
+            renderRows(result.data);
+            total.textContent = `${result.total} total users`;
+            summary.textContent = result.total
+                ? `Showing ${result.from} to ${result.to} of ${result.total}`
+                : 'Showing 0 users';
+            pageNumber.textContent = `Page ${currentPage} of ${lastPage}`;
+            previous.disabled = currentPage <= 1;
+            next.disabled = currentPage >= lastPage;
+        } catch (error) {
+            body.innerHTML = `<tr><td colspan="8" class="px-5 py-8 text-center text-red-400">${escapeHtml(error.message)}</td></tr>`;
+            total.textContent = 'Unable to load users';
+        }
+    };
+
+    previous.addEventListener('click', () => loadPage(currentPage - 1));
+    next.addEventListener('click', () => loadPage(currentPage + 1));
+
+    loadPage(1);
+});
+</script>
 @endsection

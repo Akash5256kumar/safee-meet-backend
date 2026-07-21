@@ -4,15 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\Role;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminController extends Controller
 {
     public function index(): View
     {
-        return view('admins.index');
+        return view('admins.index', [
+            'roles' => Role::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     public function data(Request $request): JsonResponse
@@ -30,5 +35,22 @@ class AdminController extends Controller
             ->withQueryString();
 
         return response()->json($admins);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:admins,email'],
+            'phone' => ['nullable', 'string', 'max:20'],
+            'role_id' => ['required', Rule::exists('admin_roles', 'id')],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'status' => ['required', 'boolean'],
+        ]);
+
+        // Admin model casts 'password' => 'hashed', so pass it as-is.
+        Admin::create($validated);
+
+        return redirect()->route('admins.index')->with('success', 'Admin created successfully.');
     }
 }

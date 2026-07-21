@@ -6,19 +6,52 @@ use App\Models\Meeting;
 use App\Models\MeetingReview;
 use App\Models\Subscription;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
         public function index()
         {
-            $users = User::latest()->paginate(20);
-            $totalUsers = User::count();
+            return view('users.index');
+        }
 
-            return view('users.index', [
-                'users' => $users,
-                'totalUsers' => $totalUsers,
+        /**
+         * Paginated user rows for the users-management table (fetched via JS,
+         * same pattern as the admins list). `plan` is eager-loaded because
+         * plan_label reads the relation (avoids an N+1 across the page).
+         */
+        public function data(Request $request): JsonResponse
+        {
+            $validated = $request->validate([
+                'page' => ['sometimes', 'integer', 'min:1'],
+                'per_page' => ['sometimes', 'integer', 'in:10,25,50'],
             ]);
+
+            $users = User::query()
+                ->with('plan')
+                ->latest('id')
+                ->paginate($validated['per_page'] ?? 10)
+                ->withQueryString();
+
+            $users->getCollection()->transform(fn (User $user) => [
+                'id' => $user->id,
+                'name' => $user->name ?: $user->display_name ?: 'Unnamed User',
+                'contact' => $user->email ?: $user->phone ?: '—',
+                'initials' => $user->initials,
+                'avatar_color' => $user->avatar_color,
+                'safee_pin' => $user->safee_pin,
+                'verification_label' => $user->verification_label,
+                'verification_color' => $user->verification_color,
+                'plan_label' => $user->plan_label,
+                'trust_score' => $user->trust_score !== null ? round($user->trust_score) : null,
+                'created_at' => $user->created_at,
+                'status_label' => $user->status_label,
+                'status_color' => $user->status_color,
+                'show_url' => route('users.show', $user->id),
+            ]);
+
+            return response()->json($users);
         }
 
         public function show($id)
