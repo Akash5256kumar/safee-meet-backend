@@ -12,40 +12,55 @@ return new class extends Migration
      * Distinct from `reviewed_by`, which FKs to `users` and is reserved for
      * a future user-side reviewer.
      *
-     * Written defensively: an earlier deploy attempt added this column as
-     * `int unsigned` (mismatched against admins.id, which is bigint
-     * unsigned) and failed while adding the foreign key, so on some
-     * environments the column already exists with the wrong type and no
-     * constraint. Safe to re-run in that state.
+     * A foreign key requires the referencing and referenced columns to be the
+     * EXACT same integer type (size + signedness). `admins.id` is not the same
+     * type on every deployment (e.g. bigint unsigned locally, int unsigned on
+     * a server built from an older schema), which is why hardcoding
+     * BIGINT UNSIGNED here failed on the server with error 3780.
+     *
+     * So we detect admins.id's real column type on the current database and
+     * make reviewed_by_admin_id match it exactly — correct everywhere, and
+     * self-healing if an earlier attempt left the column as the wrong type.
      */
     public function up(): void
     {
+        $adminIdType = $this->columnType('admins', 'id') ?? 'int unsigned';
+
         if (!Schema::hasColumn('user_verifications', 'reviewed_by_admin_id')) {
-            Schema::table('user_verifications', function (Blueprint $table) {
-                $table->unsignedBigInteger('reviewed_by_admin_id')->nullable()->after('reviewed_by');
-            });
-        } elseif ($this->columnType('user_verifications', 'reviewed_by_admin_id') !== 'bigint') {
-            DB::statement('ALTER TABLE `user_verifications` MODIFY `reviewed_by_admin_id` BIGINT UNSIGNED NULL');
+            DB::statement("ALTER TABLE `user_verifications` ADD COLUMN `reviewed_by_admin_id` {$adminIdType} NULL AFTER `reviewed_by`");
+        } else {
+            // Recover from an earlier attempt that created it with a mismatched
+            // type: re-align it to whatever admins.id actually is.
+            DB::statement("ALTER TABLE `user_verifications` MODIFY `reviewed_by_admin_id` {$adminIdType} NULL");
         }
 
         if (!$this->hasForeignKey('user_verifications', 'reviewed_by_admin_id', 'admins')) {
-            Schema::table('user_verifications', function (Blueprint $table) {
-                $table->foreign('reviewed_by_admin_id')->references('id')->on('admins')->nullOnDelete();
-            });
+            DB::statement('ALTER TABLE `user_verifications`
+                ADD CONSTRAINT `user_verifications_reviewed_by_admin_id_foreign`
+                FOREIGN KEY (`reviewed_by_admin_id`) REFERENCES `admins`(`id`) ON DELETE SET NULL');
         }
     }
 
     public function down(): void
     {
-        Schema::table('user_verifications', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('reviewed_by_admin_id');
-        });
+        if ($this->hasForeignKey('user_verifications', 'reviewed_by_admin_id', 'admins')) {
+            Schema::table('user_verifications', function (Blueprint $table) {
+                $table->dropForeign('user_verifications_reviewed_by_admin_id_foreign');
+            });
+        }
+
+        if (Schema::hasColumn('user_verifications', 'reviewed_by_admin_id')) {
+            Schema::table('user_verifications', function (Blueprint $table) {
+                $table->dropColumn('reviewed_by_admin_id');
+            });
+        }
     }
 
+    /** Full MySQL column type, e.g. "bigint unsigned" / "int unsigned". */
     private function columnType(string $table, string $column): ?string
     {
         $result = DB::selectOne('
-            SELECT DATA_TYPE AS type
+            SELECT COLUMN_TYPE AS type
             FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?
         ', [$table, $column]);
@@ -55,7 +70,6 @@ return new class extends Migration
 
     private function hasForeignKey(string $table, string $column, string $referencedTable): bool
     {
-        
         return DB::selectOne('
             SELECT CONSTRAINT_NAME AS name
             FROM information_schema.KEY_COLUMN_USAGE
