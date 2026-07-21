@@ -26,8 +26,10 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/users', [UserController::class, 'index'])->name('users');
+    Route::get('/users/data', [UserController::class, 'data'])->name('users.data');
     Route::get('/admins', [AdminController::class, 'index'])->name('admins.index');
     Route::get('/admins/data', [AdminController::class, 'data'])->name('admins.data');
+    Route::post('/admins', [AdminController::class, 'store'])->name('admins.store');
     Route::get('/verification', [VerificationController::class, 'index'])->name('verification');
     Route::get('/verification/{verification}', [VerificationController::class, 'show'])->name('verification.show');
     Route::get('/verification/{verification}/{asset}', [VerificationController::class, 'showAsset'])

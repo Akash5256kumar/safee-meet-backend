@@ -3,11 +3,24 @@
 @section('title', 'Admins')
 
 @section('content')
-<div class="md:p-6">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-white">Admin Management</h1>
-        <p id="admin-total" class="mt-1 text-sm text-gray-400">Loading admins...</p>
+<style>[x-cloak] { display: none !important; }</style>
+<div class="md:p-6" x-data="{ showCreate: {{ $errors->any() ? 'true' : 'false' }} }">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Admin Management</h1>
+            <p id="admin-total" class="mt-1 text-sm text-gray-400">Loading admins...</p>
+        </div>
+        <button type="button" @click="showCreate = true"
+            class="self-start rounded-lg bg-[#DC131C] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b50f16] sm:self-auto">
+            + Add Admin
+        </button>
     </div>
+
+    @if(session('success'))
+        <div class="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+            {{ session('success') }}
+        </div>
+    @endif
 
     <div class="overflow-x-auto rounded-xl border border-[#2a2d3e] bg-black">
         <table class="w-full min-w-[850px] border-collapse text-[13px]">
@@ -40,6 +53,86 @@
                 class="rounded-md border border-[#343746] px-4 py-2 text-gray-300 transition hover:border-red-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                 Next
             </button>
+        </div>
+    </div>
+
+    {{-- Create Admin Modal --}}
+    <div x-show="showCreate" x-cloak @click.self="showCreate = false"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+        <div class="w-full max-w-lg rounded-2xl border border-[#212529] bg-[#000] p-5">
+            <div class="mb-4 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-white">Create a new admin</h3>
+                <button type="button" @click="showCreate = false" class="text-gray-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            @if($errors->any())
+                <div class="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                    <ul class="list-inside list-disc space-y-1">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('admins.store') }}" class="grid gap-4 md:grid-cols-2">
+                @csrf
+                <div class="md:col-span-2">
+                    <label class="mb-2 block text-sm text-gray-400" for="name">Name</label>
+                    <input id="name" name="name" value="{{ old('name') }}" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]" placeholder="Jane Doe">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="email">Email</label>
+                    <input id="email" name="email" type="email" value="{{ old('email') }}" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]" placeholder="jane@example.com">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="phone">Phone <span class="text-gray-600">(optional)</span></label>
+                    <input id="phone" name="phone" value="{{ old('phone') }}"
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]" placeholder="+91...">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="role_id">Role</label>
+                    <select id="role_id" name="role_id" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]">
+                        <option value="">Select role</option>
+                        @foreach($roles as $role)
+                            <option value="{{ $role->id }}" @selected(old('role_id') == $role->id)>{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="status">Status</label>
+                    <select id="status" name="status" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]">
+                        <option value="1" @selected(old('status', '1') == '1')>Active</option>
+                        <option value="0" @selected(old('status') === '0')>Inactive</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="password">Password</label>
+                    <input id="password" name="password" type="password" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]" placeholder="Min 8 characters">
+                </div>
+                <div>
+                    <label class="mb-2 block text-sm text-gray-400" for="password_confirmation">Confirm password</label>
+                    <input id="password_confirmation" name="password_confirmation" type="password" required
+                        class="w-full rounded-lg border border-[#2a2d3e] bg-[#1a1a1a] px-3 py-2 text-sm text-white outline-none focus:border-[#DC131C]" placeholder="Re-enter password">
+                </div>
+                <div class="md:col-span-2 flex justify-end gap-3">
+                    <button type="button" @click="showCreate = false"
+                        class="rounded-lg border border-[#2a2d3e] px-4 py-2 text-sm font-semibold text-gray-300 transition hover:bg-[#2a2d3e]">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                        class="rounded-lg bg-[#DC131C] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#b50f16]">
+                        Create Admin
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
