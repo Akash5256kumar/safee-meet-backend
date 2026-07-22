@@ -85,6 +85,7 @@ Route::prefix('v1')->group(function (): void {
 
         // Subscriptions
         Route::get('/subscriptions/plans', [SubscriptionController::class, 'plans']);
+        Route::get('/subscriptions/comparison', [SubscriptionController::class, 'comparison']);
         Route::get('/subscriptions/current', [SubscriptionController::class, 'current']);
         Route::post('/subscriptions/subscribe', [SubscriptionController::class, 'subscribe']);
         Route::post('/subscriptions/cancel', [SubscriptionController::class, 'cancel']);

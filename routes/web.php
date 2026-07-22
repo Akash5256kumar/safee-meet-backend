@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\FeatureController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\IncidentsController;
@@ -41,6 +42,12 @@ Route::middleware('auth:admin')->group(function () {
         ->name('verification.reject');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::match(['get', 'post'], '/subscription', [SubscriptionsController::class, 'index'])->name('subscription');
+
+    Route::get('/features', [FeatureController::class, 'index'])->name('features.index');
+    Route::post('/features', [FeatureController::class, 'store'])->name('features.store');
+    Route::post('/features/matrix', [FeatureController::class, 'saveMatrix'])->name('features.matrix');
+    Route::put('/features/{feature}', [FeatureController::class, 'update'])->name('features.update');
+    Route::delete('/features/{feature}', [FeatureController::class, 'destroy'])->name('features.destroy');
     Route::get('/incidents', [IncidentsController::class, 'index'])->name('incidents');
     Route::get('/revenue', [RevenueController::class, 'index'])->name('revenue');
     Route::get('/terms', [TermsController::class, 'index'])->name('terms.index');

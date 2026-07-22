@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             SuperAdminSeeder::class,
             SubscriptionPlanSeeder::class,
+            FeatureSeeder::class,
         ]);
     }
 }

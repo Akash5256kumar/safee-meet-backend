@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubscriptionPlan extends Model
@@ -27,6 +28,15 @@ class SubscriptionPlan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class, 'plan_id');
+    }
+
+    // Named comparisonFeatures (not features) to avoid clashing with the
+    // legacy free-text `features` JSON column still used by the admin CRUD.
+    public function comparisonFeatures(): BelongsToMany
+    {
+        return $this->belongsToMany(Feature::class, 'plan_feature', 'plan_id', 'feature_id')
+            ->withPivot('included', 'value')
+            ->withTimestamps();
     }
 
     public function scopeActive($query)
