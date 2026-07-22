@@ -52,6 +52,13 @@
       <span>Subscriptions</span>
     </a>
 
+    <a href="{{ url('/features') }}"
+       class="mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition
+       {{ request()->is('features*') ? 'bg-[#DC131C] text-white' : 'text-[#8f98ad] hover:bg-[#1b2230] hover:text-white' }}">
+      <i class="fa-solid fa-table-list w-4 text-center"></i>
+      <span>Plan Features</span>
+    </a>
+
     <a href="{{ url('/incidents') }}"
        class="mb-1 flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition
        {{ request()->is('incidents*') ? 'bg-[#DC131C] text-white' : 'text-[#8f98ad] hover:bg-[#1b2230] hover:text-white' }}">

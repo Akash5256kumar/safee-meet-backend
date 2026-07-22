@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Feature;
 use App\Models\Subscription;
 use App\Models\SubscriptionPlan;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +22,57 @@ class SubscriptionController extends Controller
         return response()->json(
             SubscriptionPlan::active()->orderBy('sort_order')->get()
         );
+    }
+
+    /**
+     * GET /api/subscriptions/comparison — feature comparison matrix.
+     * Returns active plans (columns) and features grouped into sections (rows),
+     * each row carrying every plan's included/value so the client can render a
+     * complete grid without extra lookups. Missing = not included.
+     */
+    public function comparison(): JsonResponse
+    {
+        $plans = SubscriptionPlan::active()
+            ->orderBy('sort_order')
+            ->get(['id', 'slug', 'name', 'monthly_price', 'yearly_price', 'trial_days']);
+
+        // Baseline cell for every plan, overridden where a mapping exists.
+        $baseline = $plans->mapWithKeys(fn ($plan) => [
+            $plan->slug => ['included' => false, 'value' => null],
+        ])->all();
+
+        $features = Feature::active()
+            ->orderBy('sort_order')
+            ->with(['plans:id,slug'])
+            ->get();
+
+        $groups = $features
+            ->groupBy('group')
+            ->map(fn ($groupFeatures, $groupName) => [
+                'name' => $groupName,
+                'features' => $groupFeatures->map(function (Feature $feature) use ($baseline) {
+                    $cells = $baseline;
+                    foreach ($feature->plans as $plan) {
+                        $cells[$plan->slug] = [
+                            'included' => (bool) $plan->pivot->included,
+                            'value' => $plan->pivot->value,
+                        ];
+                    }
+
+                    return [
+                        'slug' => $feature->slug,
+                        'name' => $feature->name,
+                        'type' => $feature->type,
+                        'plans' => $cells,
+                    ];
+                })->values(),
+            ])
+            ->values();
+
+        return response()->json([
+            'plans' => $plans,
+            'groups' => $groups,
+        ]);
     }
 
     /**

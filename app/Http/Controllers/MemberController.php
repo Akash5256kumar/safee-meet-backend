@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MemberSearchCount;
 use App\Models\SearchHistory;
 use App\Models\User;
+use App\Services\PlanEntitlements;
 use App\Support\Verification\VerificationLevelResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -46,10 +47,11 @@ class MemberController extends Controller
             ], 422);
         }
 
-        if ($this->pinSearchLimitReached($request->user(), $user)) {
+        if ($this->pinSearchLimitReached($request->user())) {
             return response()->json([
                 'success' => false,
-                'message' => 'You have reached your monthly SAFEE PIN search limit. Upgrade your plan to search more members.',
+                'message' => 'You have reached your monthly SAFEE PIN search limit. Upgrade your plan to search more.',
+                'required_feature' => 'pin_search',
             ], 403);
         }
 
@@ -129,47 +131,27 @@ class MemberController extends Controller
     }
 
     /**
-     * Logs every search attempt (for full audit/analytics in `search_history`)
-     * and atomically upserts the deduped `member_search_counts` row for this
-     * searcher-member pair — a repeat search of the same member updates the
-     * existing row's count/timestamp instead of counting again.
-     */
-    /**
      * Enforces the searcher's plan PIN-search quota, reset per calendar month.
-     * The quota counts DISTINCT members searched via PIN this month, sourced
-     * from search_history — so re-searching someone you already looked up this
-     * month is free, and the count resets naturally on the 1st.
-     *
-     * A null pin_search_limit (or no plan) means unlimited — no enforcement.
+     * Every PIN search action counts (including re-searching the same member),
+     * counted from search_history for the current month. The allowance comes
+     * from the plan_feature matrix ('pin_search') via PlanEntitlements:
+     *   - null limit → Unlimited (no enforcement)
+     *   - 0          → no plan / not entitled (blocked)
      */
-    private function pinSearchLimitReached(User $searcher, User $target): bool
+    private function pinSearchLimitReached(User $searcher): bool
     {
-        $limit = $searcher->plan?->pin_search_limit;
+        $limit = app(PlanEntitlements::class)->numericLimit($searcher, 'pin_search');
 
         if ($limit === null) {
-            return false; // unlimited plan (or no plan set)
+            return false; // unlimited
         }
 
-        $monthStart = now()->startOfMonth();
-
-        // Already searched this member this month → doesn't consume new quota.
-        $alreadyThisMonth = SearchHistory::where('searcher_id', $searcher->id)
-            ->where('found_user_id', $target->id)
+        $usedThisMonth = SearchHistory::where('searcher_id', $searcher->id)
             ->where('method', 'pin')
-            ->where('created_at', '>=', $monthStart)
-            ->exists();
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
 
-        if ($alreadyThisMonth) {
-            return false;
-        }
-
-        $distinctThisMonth = SearchHistory::where('searcher_id', $searcher->id)
-            ->where('method', 'pin')
-            ->where('created_at', '>=', $monthStart)
-            ->distinct()
-            ->count('found_user_id');
-
-        return $distinctThisMonth >= $limit;
+        return $usedThisMonth >= $limit;
     }
 
     private function logSearch(Request $request, User $found, string $query, string $method): void

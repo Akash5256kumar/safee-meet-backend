@@ -34,6 +34,10 @@ class SubscriptionsController extends Controller
 
                 SubscriptionPlan::where('id', $validated['id'])->update([
                     'name' => $validated['name'],
+                    // Keep the slug in sync with the name. Excluding the row's
+                    // own id means an unchanged name keeps the same slug, and a
+                    // rename updates it (staying table-unique).
+                    'slug' => $this->uniqueSlug($validated['name'], (int) $validated['id']),
                     'monthly_price' => $validated['monthly_price'],
                     'yearly_price' => $validated['yearly_price'],
                     // Blank / 0 = no free trial on this plan.
@@ -75,14 +79,22 @@ class SubscriptionsController extends Controller
         return view('subscription.index', compact('plans'));
     }
 
-    /** Build a URL-safe, table-unique slug from a plan name. */
-    private function uniqueSlug(string $name): string
+    /**
+     * Build a URL-safe, table-unique slug from a plan name. $ignoreId lets an
+     * update exclude the row being edited from the uniqueness check, so an
+     * unchanged name keeps its existing slug instead of getting a "_2" suffix.
+     */
+    private function uniqueSlug(string $name, ?int $ignoreId = null): string
     {
         $base = Str::slug($name, '_') ?: 'plan';
         $slug = $base;
         $i = 2;
 
-        while (SubscriptionPlan::where('slug', $slug)->exists()) {
+        while (
+            SubscriptionPlan::where('slug', $slug)
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
+                ->exists()
+        ) {
             $slug = $base.'_'.$i++;
         }
 
