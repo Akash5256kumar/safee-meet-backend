@@ -270,9 +270,7 @@ class MeetingController extends Controller
         return response()->json(['message' => 'Meeting cancelled']);
     }
 
-    /**
-     * POST /api/meetings/{meeting}/arrive — arrival confirmation
-     */
+    
     public function arrive(Request $request, Meeting $meeting): JsonResponse
     {
         $this->authorizeParticipant($request, $meeting);
