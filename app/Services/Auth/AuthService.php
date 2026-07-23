@@ -178,11 +178,13 @@ class AuthService
 
     private function generateSafeeId(): string
     {
-        // safee_id is an alias of the safee_pin column (see User::safeeId());
-        // uniqueness must be checked against safee_pin at the query level.
+        // Query the physical safee column (safee_id or safee_pin) that this
+        // deployment actually has — see User::safeeColumn().
+        $column = User::safeeColumn();
+
         do {
             $id = 'SM' . strtoupper(Str::random(8));
-        } while (User::where('safee_pin', $id)->exists());
+        } while (User::where($column, $id)->exists());
 
         return $id;
     }

@@ -28,7 +28,7 @@ class MemberController extends Controller
             ], 422);
         }
 
-        $user = User::where('safee_pin', $pin)
+        $user = User::where(User::safeeColumn(), $pin)
             ->where('status', 'active')
             ->first();
 
@@ -80,7 +80,7 @@ class MemberController extends Controller
     {
         $code = strtoupper(trim($request->query('code', '')));
 
-        $user = User::where('safee_pin', $code)
+        $user = User::where(User::safeeColumn(), $code)
             ->where('status', 'active')
             ->first();
 
