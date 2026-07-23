@@ -26,7 +26,7 @@ class MeetingController extends Controller
 
         $meetings = Meeting::where('host_user_id', $userId)
             ->orWhere('guest_user_id', $userId)
-            ->with(['host:id,display_name,trust_score,trust_tier', 'guest:id,display_name,trust_score,trust_tier'])
+            ->with(['host:id,name,trust_score,trust_tier', 'guest:id,name,trust_score,trust_tier'])
             ->latest('meeting_date')
             ->paginate(20);
 
@@ -38,8 +38,8 @@ class MeetingController extends Controller
         $this->authorizeParticipant($request, $meeting);
 
         return response()->json($meeting->load([
-            'host:id,display_name,trust_score,trust_tier',
-            'guest:id,display_name,trust_score,trust_tier',
+            'host:id,name,trust_score,trust_tier',
+            'guest:id,name,trust_score,trust_tier',
             'locations',
         ]));
     }
@@ -149,13 +149,13 @@ class MeetingController extends Controller
         $this->push->sendToUser(
             $meeting->guest,
             'New meeting request',
-            "{$meeting->host->display_name} wants to meet — {$meeting->location}, {$when}",
+            "{$meeting->host->name} wants to meet — {$meeting->location}, {$when}",
             ['type' => 'meeting_request', 'meeting_id' => (string) $meeting->id],
         );
         $this->push->sendToUser(
             $meeting->host,
             'Request sent',
-            "Waiting for {$meeting->guest->display_name} to respond",
+            "Waiting for {$meeting->guest->name} to respond",
             ['type' => 'meeting_confirmed', 'meeting_id' => (string) $meeting->id],
         );
 
@@ -213,7 +213,7 @@ class MeetingController extends Controller
         $this->push->sendToUser(
             $meeting->host,
             'Meeting approved',
-            "{$meeting->guest->display_name} confirmed — {$this->formatWhen($meeting)} at {$meeting->location}",
+            "{$meeting->guest->name} confirmed — {$this->formatWhen($meeting)} at {$meeting->location}",
             ['type' => 'meeting_approved', 'meeting_id' => (string) $meeting->id],
         );
 
@@ -235,7 +235,7 @@ class MeetingController extends Controller
         $this->push->sendToUser(
             $meeting->host,
             'Meeting declined',
-            "{$meeting->guest->display_name} declined the meeting request",
+            "{$meeting->guest->name} declined the meeting request",
             ['type' => 'meeting_declined', 'meeting_id' => (string) $meeting->id],
         );
 
