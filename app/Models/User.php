@@ -114,10 +114,11 @@ class User extends Authenticatable
         'phone_encrypted',
     ];
 
-    // Expose the safee_id alias (= safee_pin) in every array/JSON response so
-    // clients can read either name. See the safeeId() accessor below.
+    // Expose BOTH safee names in every array/JSON response, whichever the
+    // physical column is on this deployment. See safeeColumn() + accessors.
     protected $appends = [
         'safee_id',
+        'safee_pin',
     ];
 
     protected function casts(): array
@@ -292,24 +293,46 @@ class User extends Authenticatable
 
     public static function generateSafeePin(): string
     {
+        $column = static::safeeColumn();
+
         do {
             $pin = 'SM-'.random_int(100000, 999999);
-        } while (static::where('safee_pin', $pin)->exists());
+        } while (static::where($column, $pin)->exists());
 
         return $pin;
     }
 
     /**
-     * `safee_id` is an alias of `safee_pin` — there is only one column
-     * (safee_pin), and reading or writing either name touches the same value.
-     * Note: DB-level queries must still use `safee_pin` (e.g.
-     * `where('safee_pin', ...)`), because accessors don't apply inside SQL.
+     * The physical SAFEE-PIN column on this deployment. Local uses `safee_pin`;
+     * some servers use `safee_id`. Detected at runtime (same idea as
+     * usesUlidKey()) so the app works on either without a schema change.
+     * DB-level queries MUST go through this — accessors don't apply in SQL.
+     */
+    public static function safeeColumn(): string
+    {
+        static $column;
+
+        return $column ??= Schema::hasColumn('users', 'safee_pin') ? 'safee_pin' : 'safee_id';
+    }
+
+    /**
+     * safee_id and safee_pin are two names for the same value — each reads and
+     * writes whichever physical column exists (see safeeColumn()). Reading the
+     * raw attributes array avoids recursing through the accessor.
      */
     protected function safeeId(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->safee_pin,
-            set: fn ($value) => ['safee_pin' => $value],
+            get: fn () => $this->attributes[static::safeeColumn()] ?? null,
+            set: fn ($value) => [static::safeeColumn() => $value],
+        );
+    }
+
+    protected function safeePin(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->attributes[static::safeeColumn()] ?? null,
+            set: fn ($value) => [static::safeeColumn() => $value],
         );
     }
 

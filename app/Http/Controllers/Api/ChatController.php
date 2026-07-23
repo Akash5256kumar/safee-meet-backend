@@ -51,7 +51,7 @@ class ChatController extends Controller
     {
         $validated = $request->validate(['safee_pin' => ['required', 'string']]);
 
-        $recipient = User::where('safee_pin', $validated['safee_pin'])->first();
+        $recipient = User::where(User::safeeColumn(), $validated['safee_pin'])->first();
 
         if (! $recipient) {
             return response()->json(['message' => 'No member found with that PIN'], 404);
