@@ -67,6 +67,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('meetings/{meeting}/location', [MeetingController::class, 'pingLocation']);
         Route::post('meetings/{meeting}/complete', [MeetingController::class, 'complete']);
         Route::post('meetings/{meeting}/review', [ReviewController::class, 'store']);
+        Route::get('meetings/{meeting}/emergency-share', [MeetingController::class, 'emergencyShare']);
 
         Route::post('device/fcm-token', [DeviceController::class, 'syncFcmToken']);
 
@@ -106,4 +107,3 @@ Route::prefix('v1')->group(function (): void {
         });
     });
 });
-

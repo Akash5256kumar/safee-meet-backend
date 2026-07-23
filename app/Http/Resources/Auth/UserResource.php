@@ -10,16 +10,21 @@ class UserResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $verification = $this->userVerification;
+
         return [
             'id'                 => $this->id,
             'safeeId'            => $this->safee_id,
             'displayName'        => $this->display_name,
             'avatarUrl'          => $this->avatar_url,
+            'profileImage'       => $verification?->face_id_image ? asset('storage/'.$verification->face_id_image) : null,
             'accountType'        => $this->account_type,
             'authProvider'       => $this->auth_provider,
             'status'             => $this->status,
             'onboardingStatus'   => $this->onboarding_status,
             'kycStatus'          => $this->kyc_status,
+            'verificationLevel'  => $verification?->verification_level ?? 0,
+            'verificationStatus' => $verification?->status ?? 'not_submitted',
             'trustScore'         => $this->trust_score,
             'trustTier'          => VerificationLevelResolver::fromUser($this->kyc_status, $this->trust_tier),
             'meetingCount'       => $this->meetingCount(),

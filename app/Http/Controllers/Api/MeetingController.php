@@ -48,6 +48,52 @@ class MeetingController extends Controller
      * POST /api/meetings — "Create Meeting" screen
      * (Meeting With / Date / Time / Meeting Purpose / Location / Notes)
      */
+    public function emergencyShare(Request $request, Meeting $meeting): JsonResponse
+    {
+        $this->authorizeParticipant($request, $meeting);
+
+        abort_unless($meeting->status === 'scheduled', 422, 'Only scheduled meetings can be shared.');
+
+        $meeting->load([
+            'host:id,name,phone',
+            'guest:id,name,phone',
+        ]);
+
+        $emergencyContacts = $request->user()
+            ->emergencyContacts()
+            ->get(['id', 'full_name', 'relationship', 'phone_number']);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'meeting' => [
+                    'id' => $meeting->id,
+                    'reference' => $meeting->reference,
+                    'status' => $meeting->status,
+                    'meeting_date' => $meeting->meeting_date?->toDateString(),
+                    'meeting_time' => $meeting->meeting_time,
+                    'location' => $meeting->location,
+                    'latitude' => $meeting->latitude,
+                    'longitude' => $meeting->longitude,
+                    'purpose' => $meeting->purpose,
+                ],
+                'users' => [
+                    'host' => [
+                        'id' => $meeting->host?->id,
+                        'name' => $meeting->host?->name ?? 'SAFEE User',
+                        'phone' => $meeting->host?->phone,
+                    ],
+                    'guest' => [
+                        'id' => $meeting->guest?->id,
+                        'name' => $meeting->guest?->name ?? 'SAFEE User',
+                        'phone' => $meeting->guest?->phone,
+                    ],
+                ],
+                'emergency_contacts' => $emergencyContacts,
+            ],
+        ]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
