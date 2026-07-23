@@ -17,14 +17,12 @@ use Throwable;
 
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService) {}
-
     // ── POST /api/v1/auth/register ────────────────────────────────────────────
 
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, AuthService $authService): JsonResponse
     {
         try {
-            $result = $this->authService->register($request->validated());
+            $result = $authService->register($request->validated());
 
             return response()->json([
                 'success' => true,
@@ -46,10 +44,10 @@ class AuthController extends Controller
 
     // ── POST /api/v1/auth/login ───────────────────────────────────────────────
 
-    public function login(LoginRequest $request): JsonResponse
+    public function login(LoginRequest $request, AuthService $authService): JsonResponse
     {
         try {
-            $result = $this->authService->login($request->validated());
+            $result = $authService->login($request->validated());
 
             return response()->json([
                 'success' => true,
@@ -70,9 +68,9 @@ class AuthController extends Controller
 
     // ── POST /api/v1/auth/logout ──────────────────────────────────────────────
 
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request, AuthService $authService): JsonResponse
     {
-        $this->authService->logout($request->user());
+        $authService->logout($request->user());
 
         return response()->json([
             'success' => true,
@@ -92,9 +90,9 @@ class AuthController extends Controller
 
     // ── POST /api/v1/auth/check-user-exists ──────────────────────────────────
 
-    public function checkUserExists(CheckUserExistsRequest $request): JsonResponse
+    public function checkUserExists(CheckUserExistsRequest $request, AuthService $authService): JsonResponse
     {
-        $exists = $this->authService->checkUserExists(
+        $exists = $authService->checkUserExists(
             $request->input('email'),
             $request->input('phone'),
             $request->input('providerUid'),
