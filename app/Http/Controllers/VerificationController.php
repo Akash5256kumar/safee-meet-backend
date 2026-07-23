@@ -6,6 +6,7 @@ use App\Models\IdentityVerification;
 use App\Models\User;
 use App\Models\UserVerification;
 use App\Services\Verification\IdentityVerificationService;
+use App\Support\Verification\TrustScoreCalculator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -82,11 +83,15 @@ class VerificationController extends Controller
                 'rejected_at' => null,
             ]);
 
-            $verification->user?->update([
-                'verification_level' => 'level1',
-                'kyc_status' => 'approved',
-                'kyc_verified_at' => now(),
-            ]);
+            if ($user = $verification->user) {
+                $user->update([
+                    'verification_level' => 'level1',
+                    'kyc_status' => 'verified',
+                    'kyc_verified_at' => now(),
+                ]);
+
+                TrustScoreCalculator::recalculate($user);
+            }
         });
 
         return redirect()->route('verification')->with('success', 'Verification approved.');
@@ -107,9 +112,13 @@ class VerificationController extends Controller
                 'rejected_at' => now(),
             ]);
 
-            $verification->user?->update([
-                'kyc_status' => 'rejected',
-            ]);
+            if ($user = $verification->user) {
+                $user->update([
+                    'kyc_status' => 'rejected',
+                ]);
+
+                TrustScoreCalculator::recalculate($user);
+            }
         });
 
         return redirect()->route('verification')->with('success', 'Verification rejected.');

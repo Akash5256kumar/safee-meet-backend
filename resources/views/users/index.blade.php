@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span style="background:${escapeHtml(user.status_color)}26; color:${escapeHtml(user.status_color)}; font-size:11px; padding:3px 12px; border-radius:999px;">${escapeHtml(user.status_label)}</span>
                 </td>
                 <td class="px-5 py-4 text-[#fff] font-medium">
-                    <a href="${user.show_url}" class="see-more-btn">See More</a>
+                    <a href="${user.show_url}" class="see-more-btn inline-flex items-center gap-1 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500 no-underline transition hover:bg-red-500 hover:text-white">See More</a>
                 </td>
             </tr>
         `).join('');
